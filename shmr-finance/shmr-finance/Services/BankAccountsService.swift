@@ -13,9 +13,11 @@ final class BankAccountsService {
         return accounts
     }
 
-    // Пока считаем основным первый счёт.
-    func primaryAccount() async -> BankAccount? {
-        return accounts.first
+    // Выбранный счёт по его id.
+    func account(id: Int) async -> BankAccount? {
+        return accounts.first(where: { account in
+            account.id == id
+        })
     }
 
     func updateAccount(_ account: BankAccount) async -> BankAccount {
