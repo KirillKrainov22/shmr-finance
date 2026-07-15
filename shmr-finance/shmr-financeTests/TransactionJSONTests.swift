@@ -1,8 +1,6 @@
 import Testing
 import Foundation
 @testable import shmr_finance
-// ↑ имя модуля = имя проекта, где "-" заменён на "_".
-// Если модуль называется иначе — поправь эту строку.
 
 struct TransactionJSONTests {
 
