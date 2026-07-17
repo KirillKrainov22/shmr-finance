@@ -46,7 +46,7 @@ struct TransactionsListView: View {
             .sheet(isPresented: $showDatePicker) {
                 datePickerSheet
             }
-            // Грузит при появлении и заново при каждой смене даты.
+            // Задание со звездочкой, если пользователь меняет дату на экране расходов или доходов, список операций и сумма обновляются через transactionsService
             .task(id: viewModel.selectedDate) {
                 await viewModel.load()
             }
