@@ -23,7 +23,7 @@ struct TransactionsListView: View {
                 header
 
                 List {
-                    ForEach(viewModel.transactions) { transaction in
+                    ForEach(viewModel.sortedTransactions) { transaction in
                         row(for: transaction)
                     }
                 }
@@ -46,7 +46,7 @@ struct TransactionsListView: View {
             .sheet(isPresented: $showDatePicker) {
                 datePickerSheet
             }
-            // Задание со звездочкой, если пользователь меняет дату на экране расходов или доходов, список операций и сумма обновляются через transactionsService
+            // Грузит при появлении и заново при каждой смене даты.
             .task(id: viewModel.selectedDate) {
                 await viewModel.load()
             }
@@ -54,10 +54,13 @@ struct TransactionsListView: View {
     }
 
     private var topBar: some View {
-        HStack {
+        @Bindable var viewModel = viewModel
+
+        return HStack {
             dateChip
             Spacer()
             HStack(spacing: 8) {
+                sortMenu
                 circleButton(systemName: "chart.pie") {
                     showAnalytics = true
                 }
@@ -68,6 +71,23 @@ struct TransactionsListView: View {
         }
         .padding(.horizontal, 12)
         .frame(height: 64)
+    }
+
+    private var sortMenu: some View {
+        @Bindable var viewModel = viewModel
+
+        return Menu {
+            Picker("Сортировка", selection: $viewModel.sortOption) {
+                ForEach(TransactionSort.allCases) { option in
+                    Text(option.rawValue).tag(option)
+                }
+            }
+        } label: {
+            Image(systemName: "arrow.up.arrow.down")
+                .foregroundStyle(.primary)
+                .frame(width: 40, height: 40)
+                .background(Circle().fill(Color(.systemGray6)))
+        }
     }
 
     private var dateChip: some View {
@@ -87,7 +107,7 @@ struct TransactionsListView: View {
             .padding(.vertical, 8)
             .background(Capsule().fill(Color(.systemGray6)))
         }
-        .buttonStyle(.plain) // без .plain кнопка красит содержимое системным цветом
+        .buttonStyle(.plain) // без .plain кнопка красит содержимое акцентным цветом
     }
 
     private func circleButton(systemName: String, action: @escaping () -> Void) -> some View {

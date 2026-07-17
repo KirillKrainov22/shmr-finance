@@ -1,6 +1,18 @@
 import Foundation
 import Observation
 
+// Вариант сортировки операций в списке.
+enum TransactionSort: String, CaseIterable, Identifiable {
+    case dateNewest = "Сначала новые"
+    case dateOldest = "Сначала старые"
+    case amountDescending = "Сумма: по убыванию"
+    case amountAscending = "Сумма: по возрастанию"
+
+    var id: String {
+        rawValue
+    }
+}
+
 // Мозг экрана списка операций: грузит данные, фильтрует по направлению, считает сумму.
 @Observable
 final class TransactionsListViewModel {
@@ -9,6 +21,9 @@ final class TransactionsListViewModel {
 
     // Выбранный день. По умолчанию — сегодня.
     var selectedDate = Date()
+
+    // Текущая сортировка списка.
+    var sortOption: TransactionSort = .dateNewest
 
     // Операции нужного направления за выбранный день.
     var transactions: [Transaction] = []
@@ -26,6 +41,28 @@ final class TransactionsListViewModel {
     var total: Decimal {
         transactions.reduce(Decimal(0)) { partialSum, transaction in
             partialSum + transaction.amount
+        }
+    }
+
+    // Операции, отсортированные по выбранному варианту (для отображения в списке).
+    var sortedTransactions: [Transaction] {
+        switch sortOption {
+        case .dateNewest:
+            return transactions.sorted { first, second in
+                first.transactionDate > second.transactionDate
+            }
+        case .dateOldest:
+            return transactions.sorted { first, second in
+                first.transactionDate < second.transactionDate
+            }
+        case .amountDescending:
+            return transactions.sorted { first, second in
+                first.amount > second.amount
+            }
+        case .amountAscending:
+            return transactions.sorted { first, second in
+                first.amount < second.amount
+            }
         }
     }
 
