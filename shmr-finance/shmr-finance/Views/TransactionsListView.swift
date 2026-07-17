@@ -23,12 +23,16 @@ struct TransactionsListView: View {
                 header
 
                 List {
-                    ForEach(viewModel.sortedTransactions) { transaction in
+                    ForEach(Array(viewModel.sortedTransactions.enumerated()), id: \.element.id) { index, transaction in
                         row(for: transaction)
+                            // У первой строки List сам не рисует верхний сепаратор — включаем.
+                            .listRowSeparator(index == 0 ? .visible : .automatic, edges: .top)
                     }
                 }
                 .listStyle(.plain)
+                .scrollContentBackground(.hidden) // прячем белый фон списка, чтобы был виден фон экрана
             }
+            .background(backgroundColor)
             .environment(\.locale, Locale(identifier: "ru_RU")) // ₽ и русские даты на всём экране
             .toolbar(.hidden, for: .navigationBar)
             .overlay(alignment: .bottomTrailing) {
@@ -84,10 +88,10 @@ struct TransactionsListView: View {
             }
         } label: {
             Image(systemName: "arrow.up.arrow.down")
-                .foregroundStyle(.primary)
                 .frame(width: 40, height: 40)
-                .background(Circle().fill(Color(.systemGray6)))
         }
+        .tint(.primary) // Menu красит значок акцентным — форсируем чёрный
+        .glassCapsule()
     }
 
     private var dateChip: some View {
@@ -105,9 +109,9 @@ struct TransactionsListView: View {
             .foregroundStyle(.primary)
             .padding(.horizontal, 12)
             .padding(.vertical, 8)
-            .background(Capsule().fill(Color(.systemGray6)))
         }
         .buttonStyle(.plain) // без .plain кнопка красит содержимое акцентным цветом
+        .glassCapsule()
     }
 
     private func circleButton(systemName: String, action: @escaping () -> Void) -> some View {
@@ -115,9 +119,9 @@ struct TransactionsListView: View {
             Image(systemName: systemName)
                 .foregroundStyle(.primary)
                 .frame(width: 40, height: 40)
-                .background(Circle().fill(Color(.systemGray6)))
         }
         .buttonStyle(.plain)
+        .glassCapsule()
     }
 
     private var datePickerSheet: some View {
@@ -161,7 +165,7 @@ struct TransactionsListView: View {
             if let category = viewModel.category(for: transaction) {
                 ZStack {
                     Circle()
-                        .fill(Color(.systemGray6))
+                        .stroke(Color(.separator), lineWidth: 1)
                         .frame(width: 40, height: 40)
                     Text(String(category.emoji))
                         .font(.system(size: 22))
@@ -200,6 +204,11 @@ struct TransactionsListView: View {
 
     private var currencyFormat: Decimal.FormatStyle.Currency {
         .currency(code: "RUB").precision(.fractionLength(0))
+    }
+
+    // Фон экрана из макета (#FAFAFA), а не чистый белый.
+    private var backgroundColor: Color {
+        Color(red: 250 / 255, green: 250 / 255, blue: 250 / 255)
     }
 }
 
