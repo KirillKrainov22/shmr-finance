@@ -42,7 +42,7 @@ struct TransactionsListView: View {
                 AnalyticsView()
             }
             .sheet(isPresented: $showSettings) {
-                Text("Настройки (заглушка)")
+                SettingsView(direction: viewModel.direction)
             }
             .sheet(isPresented: $showAddTransaction) {
                 Text("Новая операция (заглушка)")

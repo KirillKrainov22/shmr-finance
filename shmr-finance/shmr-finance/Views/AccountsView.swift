@@ -45,7 +45,7 @@ struct AccountsView: View {
                 AnalyticsView()
             }
             .sheet(isPresented: $showSettings) {
-                Text("Настройки (заглушка)")
+                SettingsView(direction: nil)
             }
             .sheet(isPresented: $showDatePicker) {
                 datePickerSheet
