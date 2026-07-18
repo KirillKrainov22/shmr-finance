@@ -54,7 +54,14 @@ struct BalanceCorrectionView: View {
                 TextField("0", text: $amountText)
                     .keyboardType(.decimalPad)
                     .multilineTextAlignment(.center)
-                    .fixedSize()
+                    .frame(width: fieldWidth) // ширина по содержимому: сумма центрируется, пустое поле тапабельно
+                    .onChange(of: amountText) { _, newValue in
+                        // Срабатывает и при вставке из буфера — чистим невалидные символы.
+                        let cleaned = filtered(newValue)
+                        if cleaned != newValue {
+                            amountText = cleaned
+                        }
+                    }
                 Text(currencySymbol)
             }
             .font(.system(size: 32, weight: .bold, design: .rounded))
@@ -100,6 +107,34 @@ struct BalanceCorrectionView: View {
             onConfirm(value)
         }
         dismiss()
+    }
+
+    // Ширина поля растёт по количеству символов, чтобы сумма оставалась по центру.
+    private var fieldWidth: CGFloat {
+        return max(40, CGFloat(amountText.count) * 19 + 12)
+    }
+
+    // Оставляем цифры, один разделитель и максимум 2 знака после него.
+    private func filtered(_ input: String) -> String {
+        var result = ""
+        var hasSeparator = false
+        var decimalCount = 0
+        for character in input {
+            if character.isNumber {
+                if hasSeparator {
+                    if decimalCount < 2 {
+                        result.append(character)
+                        decimalCount += 1
+                    }
+                } else {
+                    result.append(character)
+                }
+            } else if (character == "." || character == ",") && hasSeparator == false {
+                result.append(character)
+                hasSeparator = true
+            }
+        }
+        return result
     }
 
     private var dateText: String {

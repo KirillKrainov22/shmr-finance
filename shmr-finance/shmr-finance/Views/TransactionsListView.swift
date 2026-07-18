@@ -203,7 +203,7 @@ struct TransactionsListView: View {
     }
 
     private var currencyFormat: Decimal.FormatStyle.Currency {
-        .currency(code: "RUB").precision(.fractionLength(0))
+        .currency(code: "RUB").precision(.fractionLength(0...2))
     }
 
     // Фон экрана из макета (#FAFAFA), а не чистый белый.

@@ -10,6 +10,7 @@ struct AccountsView: View {
     @State private var showDatePicker = false
     @State private var accountToCorrect: BankAccount?
     @State private var showAddAccount = false
+    @State private var isBalanceHidden = false
 
     var body: some View {
         NavigationStack {
@@ -61,6 +62,9 @@ struct AccountsView: View {
             }
             .task {
                 await viewModel.load()
+            }
+            .onShake {
+                isBalanceHidden.toggle()
             }
         }
     }
@@ -138,13 +142,33 @@ struct AccountsView: View {
             Text("баланс")
                 .font(.system(size: 14, weight: .medium))
                 .foregroundStyle(.secondary)
-            Text(viewModel.totalBalance, format: currencyFormat)
-                .font(.system(size: 34, weight: .bold, design: .rounded))
+            balanceValue
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(.horizontal, 20)
         .padding(.top, 12)
         .padding(.bottom, 32)
+    }
+
+    // Сумма или спойлер поверх неё, если баланс скрыт (по тряске).
+    private var balanceValue: some View {
+        let balanceString = viewModel.totalBalance.formatted(
+            .currency(code: viewModel.currencyCode)
+                .precision(.fractionLength(0...2))
+                .locale(Locale(identifier: "ru_RU"))
+        )
+
+        return Text(balanceString)
+            .font(.system(size: 34, weight: .bold, design: .rounded))
+            .opacity(isBalanceHidden ? 0 : 1)
+            .overlay {
+                if isBalanceHidden {
+                    // Фон под цвет экрана прячет число, поверх — только мерцающие частицы.
+                    SpoilerView()
+                        .background(backgroundColor)
+                }
+            }
+            .animation(.easeInOut(duration: 0.3), value: isBalanceHidden)
     }
 
     private func row(for account: BankAccount) -> some View {
@@ -179,7 +203,7 @@ struct AccountsView: View {
     }
 
     private var currencyFormat: Decimal.FormatStyle.Currency {
-        .currency(code: viewModel.currencyCode).precision(.fractionLength(0))
+        .currency(code: viewModel.currencyCode).precision(.fractionLength(0...2))
     }
 
     private var backgroundColor: Color {
