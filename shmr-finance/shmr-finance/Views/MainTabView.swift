@@ -14,11 +14,10 @@ struct MainTabView: View {
                 .tabItem {
                     Label("Доходы", systemImage: "arrow.up.circle").environment(\.symbolVariants, .none)
                 }
-
-            Text("Счета")
+            AccountsView()
                 .tabItem {
                     Label("Счета", systemImage: "wallet.bifold").environment(\.symbolVariants, .none)
-                }
+                    }
         }
     }
 }

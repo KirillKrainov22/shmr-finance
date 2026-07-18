@@ -1,0 +1,189 @@
+import SwiftUI
+
+// Экран «Счета»: общий баланс и список счетов. Тот же shell, что и экран операций.
+struct AccountsView: View {
+
+    @State private var viewModel = BankAccountsViewModel()
+    @State private var selectedDate = Date()
+    @State private var showSettings = false
+    @State private var showAnalytics = false
+    @State private var showDatePicker = false
+    @State private var accountToCorrect: BankAccount?
+    @State private var showAddAccount = false
+
+    var body: some View {
+        NavigationStack {
+            VStack(spacing: 0) {
+                topBar
+                balanceHeader
+
+                List {
+                    ForEach(Array(viewModel.accounts.enumerated()), id: \.element.id) { index, account in
+                        row(for: account)
+                            .contentShape(Rectangle()) // тапабельна вся строка, не только текст
+                            .onTapGesture {
+                                accountToCorrect = account
+                            }
+                            .listRowSeparator(index == 0 ? .visible : .automatic, edges: .top)
+                    }
+                }
+                .listStyle(.plain)
+                .scrollContentBackground(.hidden)
+            }
+            .background(backgroundColor)
+            .environment(\.locale, Locale(identifier: "ru_RU"))
+            .toolbar(.hidden, for: .navigationBar)
+            .overlay(alignment: .bottomTrailing) {
+                addButton
+            }
+            .navigationDestination(isPresented: $showAnalytics) {
+                AnalyticsView()
+            }
+            .sheet(isPresented: $showSettings) {
+                Text("Настройки (заглушка)")
+            }
+            .sheet(isPresented: $showDatePicker) {
+                datePickerSheet
+            }
+            .sheet(item: $accountToCorrect) { account in
+                BalanceCorrectionView(account: account) { newBalance in
+                    Task {
+                        await viewModel.updateBalance(of: account, to: newBalance)
+                    }
+                }
+            }
+            .sheet(isPresented: $showAddAccount) {
+                Text("Добавление счёта (заглушка)")
+            }
+            .task {
+                await viewModel.load()
+            }
+        }
+    }
+
+    private var topBar: some View {
+        HStack {
+            dateChip
+            Spacer()
+            HStack(spacing: 8) {
+                circleButton(systemName: "chart.pie") {
+                    showAnalytics = true
+                }
+                circleButton(systemName: "slider.horizontal.3") {
+                    showSettings = true
+                }
+            }
+        }
+        .padding(.horizontal, 12)
+        .frame(height: 64)
+    }
+
+    private var dateChip: some View {
+        Button {
+            showDatePicker = true
+        } label: {
+            HStack(spacing: 4) {
+                Image(systemName: "calendar")
+                Text(
+                    selectedDate,
+                    format: .dateTime.day().month(.wide)
+                )
+            }
+            .font(.system(size: 15, weight: .medium))
+            .foregroundStyle(.primary)
+            .padding(.horizontal, 12)
+            .padding(.vertical, 8)
+        }
+        .buttonStyle(.plain)
+        .glassCapsule()
+    }
+
+    private func circleButton(systemName: String, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Image(systemName: systemName)
+                .foregroundStyle(.primary)
+                .frame(width: 40, height: 40)
+        }
+        .buttonStyle(.plain)
+        .glassCapsule()
+    }
+
+    private var datePickerSheet: some View {
+        NavigationStack {
+            DatePicker(
+                "Дата",
+                selection: $selectedDate,
+                displayedComponents: .date
+            )
+            .datePickerStyle(.graphical)
+            .padding()
+            .toolbar {
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Готово") {
+                        showDatePicker = false
+                    }
+                }
+            }
+        }
+        .presentationDetents([.medium])
+    }
+
+    // Общий баланс (только отображение; корректируется каждый счёт по тапу на строку).
+    private var balanceHeader: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Text("баланс")
+                .font(.system(size: 14, weight: .medium))
+                .foregroundStyle(.secondary)
+            Text(viewModel.totalBalance, format: currencyFormat)
+                .font(.system(size: 34, weight: .bold, design: .rounded))
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(.horizontal, 20)
+        .padding(.top, 12)
+        .padding(.bottom, 32)
+    }
+
+    private func row(for account: BankAccount) -> some View {
+        HStack(spacing: 16) {
+            ZStack {
+                Circle()
+                    .stroke(Color(.separator), lineWidth: 1)
+                    .frame(width: 40, height: 40)
+                Text("💰")
+                    .font(.system(size: 22))
+            }
+            Text(account.name)
+                .font(.system(size: 16, weight: .medium))
+            Spacer()
+            Text(account.balance, format: currencyFormat)
+                .font(.system(size: 14, weight: .medium))
+        }
+        .padding(.vertical, 8)
+    }
+
+    private var addButton: some View {
+        Button {
+            showAddAccount = true
+        } label: {
+            Image(systemName: "plus")
+                .font(.title2.weight(.semibold))
+                .foregroundStyle(.white)
+                .frame(width: 56, height: 56)
+                .background(Circle().fill(Color.accentColor))
+        }
+        .padding(16)
+    }
+
+    private var currencyFormat: Decimal.FormatStyle.Currency {
+        .currency(code: viewModel.currencyCode).precision(.fractionLength(0))
+    }
+
+    private var backgroundColor: Color {
+        Color(red: 250 / 255, green: 250 / 255, blue: 250 / 255)
+    }
+}
+
+#Preview {
+    AccountsView()
+}
+
