@@ -16,15 +16,31 @@ final class CategoriesViewModel {
         self.direction = direction
     }
 
-    // Категории, отфильтрованные по строке поиска.
+    // Категории, отфильтрованные нечётким поиском (fuzzy).
     var filteredCategories: [Category] {
         let query = searchText.trimmingCharacters(in: .whitespaces)
         if query.isEmpty {
             return categories
         }
         return categories.filter { category in
-            category.name.range(of: query, options: .caseInsensitive) != nil
+            Self.fuzzyMatch(query: query, in: category.name)
         }
+    }
+
+    // Нечёткий поиск: символы запроса встречаются в названии по порядку,
+    // но не обязательно подряд («прдкт» → «Продукты»).
+    private static func fuzzyMatch(query: String, in text: String) -> Bool {
+        let queryCharacters = Array(query.lowercased())
+        let textCharacters = Array(text.lowercased())
+        var matchedCount = 0
+
+        for character in textCharacters {
+            if matchedCount < queryCharacters.count && character == queryCharacters[matchedCount] {
+                matchedCount += 1
+            }
+        }
+
+        return matchedCount == queryCharacters.count
     }
 
     func load() async {
@@ -35,3 +51,4 @@ final class CategoriesViewModel {
         }
     }
 }
+
