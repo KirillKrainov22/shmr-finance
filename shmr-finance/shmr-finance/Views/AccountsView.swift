@@ -29,6 +29,10 @@ struct AccountsView: View {
                 }
                 .listStyle(.plain)
                 .scrollContentBackground(.hidden)
+                .refreshable {
+                    // Pull to refresh — тянем список вниз, перезагружаем данные через модель.
+                    await viewModel.load()
+                }
             }
             .background(backgroundColor)
             .environment(\.locale, Locale(identifier: "ru_RU"))
