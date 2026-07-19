@@ -1,12 +1,10 @@
 import SwiftUI
 
-// Экран выбора статьи (категории) с поиском по кнопке-лупе снизу.
+// Экран выбора статьи (категории). Поиск — нативный, на iOS 26 минимизируется в иконку.
 struct CategoriesView: View {
 
     @State private var viewModel: CategoriesViewModel
     @Environment(\.dismiss) private var dismiss
-    @State private var isSearching = false
-    @FocusState private var searchFocused: Bool
 
     init(direction: Direction?) {
         _viewModel = State(initialValue: CategoriesViewModel(direction: direction))
@@ -23,68 +21,34 @@ struct CategoriesView: View {
             .navigationTitle("Статьи")
             .navigationBarTitleDisplayMode(.inline)
             .environment(\.locale, Locale(identifier: "ru_RU"))
+            .searchable(text: $viewModel.searchText, prompt: "Поиск")
+            .minimizedSearchBehavior()
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button {
                         dismiss()
                     } label: {
-                        circleIcon("xmark")
+                        Image(systemName: "xmark")
+                            .font(.system(size: 14, weight: .semibold))
+                            .foregroundStyle(.primary)
+                            .frame(width: 32, height: 32)
+                            .glassCapsule()
                     }
                     .buttonStyle(.plain)
                 }
-            }
-            // Кнопка-лупа справа снизу, пока не ищем.
-            .overlay(alignment: .bottomTrailing) {
-                if isSearching == false {
-                    Button {
-                        isSearching = true
-                        searchFocused = true
-                    } label: {
-                        circleIcon("magnifyingglass", size: 56)
-                    }
-                    .buttonStyle(.plain)
-                    .padding(20)
-                }
-            }
-            // Строка поиска снизу над клавиатурой.
-            .safeAreaInset(edge: .bottom) {
-                if isSearching {
-                    HStack(spacing: 8) {
-                        HStack {
-                            TextField("Поиск", text: $viewModel.searchText)
-                                .focused($searchFocused)
-                            if viewModel.searchText.isEmpty == false {
-                                Button {
-                                    viewModel.searchText = ""
-                                } label: {
-                                    Image(systemName: "xmark.circle.fill")
-                                        .foregroundStyle(.primary)
-                                }
-                                .buttonStyle(.plain)
-                            }
-                        }
-                        .padding(.horizontal, 12)
-                        .padding(.vertical, 10)
-                        .glassCapsule()
-
-                        Button {
-                            isSearching = false
-                            viewModel.searchText = ""
-                            searchFocused = false
-                        } label: {
-                            circleIcon("xmark")
-                        }
-                        .buttonStyle(.plain)
-                    }
-                    .padding(.horizontal, 12)
-                    .padding(.vertical, 8)
-                    .background(.bar)
+                // iOS 26: нативный поиск в нижнем баре, прижат вправо, минимизируется в иконку.
+                if #available(iOS 26, *) {
+                    ToolbarSpacer(.flexible, placement: .bottomBar)
+                    DefaultToolbarItem(kind: .search, placement: .bottomBar)
                 }
             }
             .task {
                 await viewModel.load()
             }
         }
+        // Лист открывается на средней высоте, при клавиатуре сам поднимается до .large.
+        .presentationDetents([.medium, .large])
+        .presentationBackground(Color(.systemBackground)) // белый фон, как у Настроек
     }
 
     private func row(for category: Category) -> some View {
@@ -100,17 +64,17 @@ struct CategoriesView: View {
                 .font(.system(size: 16, weight: .medium))
         }
     }
-
-    private func circleIcon(_ systemName: String, size: CGFloat = 32) -> some View {
-        Image(systemName: systemName)
-            .font(.system(size: size == 56 ? 18 : 14, weight: .semibold))
-            .foregroundStyle(.primary)
-            .frame(width: size, height: size)
-            .glassCapsule()
-    }
 }
 
-#Preview {
-    CategoriesView(direction: .outcome)
+extension View {
+    // На iOS 26 минимизирует строку поиска в иконку; на более старых — без изменений.
+    @ViewBuilder
+    func minimizedSearchBehavior() -> some View {
+        if #available(iOS 26, *) {
+            self.searchToolbarBehavior(.minimize)
+        } else {
+            self
+        }
+    }
 }
 

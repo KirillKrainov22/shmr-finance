@@ -52,6 +52,8 @@ struct SettingsView: View {
                 CategoriesView(direction: direction)
             }
         }
+        .presentationDetents([.medium, .large])
+        .presentationBackground(Color(.systemBackground))
     }
 
     private func stubRow(_ title: String) -> some View {
