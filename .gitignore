@@ -35,7 +35,6 @@ playground.xcworkspace
 ### SwiftPM ###
 Packages
 xcuserdata
-*.xcodeproj
 
 ### Xcode Patch ###
 *.xcodeproj/*
