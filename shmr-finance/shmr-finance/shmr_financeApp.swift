@@ -11,7 +11,7 @@ import SwiftUI
 struct shmr_financeApp: App {
     var body: some Scene {
         WindowGroup {
-            ContentView()
+            MainTabView()
         }
     }
 }
