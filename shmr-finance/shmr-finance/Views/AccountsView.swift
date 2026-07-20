@@ -14,26 +14,34 @@ struct AccountsView: View {
 
     var body: some View {
         NavigationStack {
-            VStack(spacing: 0) {
-                topBar
-                balanceHeader
-
-                List {
-                    ForEach(Array(viewModel.accounts.enumerated()), id: \.element.id) { index, account in
-                        row(for: account)
-                            .contentShape(Rectangle()) // тапабельна вся строка, не только текст
-                            .onTapGesture {
-                                accountToCorrect = account
+            ScrollView {
+                // pinnedViews: заголовок секции "прилипает" сверху и перекрывает
+                // строки при обычном скролле, но при оттягивании вниз (pull to
+                // refresh) уходит вместе с контентом, открывая индикатор обновления.
+                LazyVStack(spacing: 0, pinnedViews: [.sectionHeaders]) {
+                    Section {
+                        ForEach(Array(viewModel.accounts.enumerated()), id: \.element.id) { index, account in
+                            row(for: account)
+                                .padding(.horizontal, 20)
+                                .contentShape(Rectangle())
+                                .onTapGesture {
+                                    accountToCorrect = account
+                                }
+                            if index != viewModel.accounts.count - 1 {
+                                Divider().padding(.leading, 20)
                             }
-                            .listRowSeparator(index == 0 ? .visible : .automatic, edges: .top)
+                        }
+                    } header: {
+                        VStack(spacing: 0) {
+                            topBar
+                            balanceHeader
+                        }
+                        .background(backgroundColor)
                     }
                 }
-                .listStyle(.plain)
-                .scrollContentBackground(.hidden)
-                .refreshable {
-                    // Pull to refresh — тянем список вниз, перезагружаем данные через модель.
-                    await viewModel.load()
-                }
+            }
+            .refreshable {
+                await viewModel.load()
             }
             .background(backgroundColor)
             .environment(\.locale, Locale(identifier: "ru_RU"))
