@@ -10,6 +10,7 @@ struct TransactionEditView: View {
     @State private var showAccountPicker = false
     @State private var showDatePicker = false
     @State private var detent: PresentationDetent = .medium
+    @State private var showValidationAlert = false
 
     // Колбэк, чтобы список обновился после сохранения/удаления.
     private let onFinish: () -> Void
@@ -128,11 +129,16 @@ struct TransactionEditView: View {
                     viewModel.account = selected
                 }
             }
+            .alert("Заполните все поля", isPresented: $showValidationAlert) {
+                Button("Ок", role: .cancel) {}
+            } message: {
+                Text(validationMessage)
+            }
             .task {
                 await viewModel.load()
             }
         }
-        // При открытом календаре в наборе только .large — лист вынужден подняться вверх, но не поднимается(
+        // При открытом календаре в наборе только .large — лист вынужден подняться вверх.
         .presentationDetents(showDatePicker ? [.large] : [.medium, .large], selection: $detent)
         .presentationBackground(Color(.systemBackground))
     }
@@ -232,8 +238,27 @@ struct TransactionEditView: View {
         return "\(day), \(time)"
     }
 
-    // Подтверждение: сохраняем операцию.
+    // Перечисляем, каких именно полей не хватает.
+    private var validationMessage: String {
+        var missing: [String] = []
+        if viewModel.category == nil {
+            missing.append("статью")
+        }
+        if viewModel.account == nil {
+            missing.append("счёт")
+        }
+        if viewModel.parsedAmount == nil {
+            missing.append("сумму")
+        }
+        return "Нужно указать: " + missing.joined(separator: ", ") + "."
+    }
+
+    // Подтверждение: сначала проверяем, что все обязательные поля заполнены.
     private func confirm() {
+        guard viewModel.isValid else {
+            showValidationAlert = true
+            return
+        }
         Task {
             await viewModel.save()
             onFinish()
