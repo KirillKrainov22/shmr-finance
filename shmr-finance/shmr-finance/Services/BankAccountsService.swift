@@ -3,6 +3,9 @@ import Foundation
 // Сервис банковских счетов. Мок: данные захардкожены в коде.
 final class BankAccountsService {
 
+    // Общий экземпляр на всё приложение — единый источник данных для всех экранов.
+    static let shared = BankAccountsService()
+
     private var accounts: [BankAccount] = [
         BankAccount(id: 1, name: "Яндекс Pay", balance: 1200, currency: "RUB"),
         BankAccount(id: 2, name: "Газпромбанк", balance: 320_500, currency: "RUB"),
@@ -30,3 +33,4 @@ final class BankAccountsService {
         return account
     }
 }
+

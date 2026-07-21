@@ -6,8 +6,12 @@ struct CategoriesView: View {
     @State private var viewModel: CategoriesViewModel
     @Environment(\.dismiss) private var dismiss
 
-    init(direction: Direction?) {
+    // Необязательный колбэк выбора: если задан — по тапу на статью она возвращается и экран закрывается.
+    private let onSelect: ((Category) -> Void)?
+
+    init(direction: Direction?, onSelect: ((Category) -> Void)? = nil) {
         _viewModel = State(initialValue: CategoriesViewModel(direction: direction))
+        self.onSelect = onSelect
     }
 
     var body: some View {
@@ -16,6 +20,13 @@ struct CategoriesView: View {
         return NavigationStack {
             List(viewModel.filteredCategories) { category in
                 row(for: category)
+                    .contentShape(Rectangle()) // тапабельна вся строка
+                    .onTapGesture {
+                        onSelect?(category)
+                        if onSelect != nil {
+                            dismiss()
+                        }
+                    }
             }
             .listStyle(.plain)
             .navigationTitle("Статьи")

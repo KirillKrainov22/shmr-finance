@@ -3,6 +3,9 @@ import Foundation
 // Сервис операций. Мок: держит операции в памяти и умеет их отдавать за период, создавать, редактировать и удалять.
 final class TransactionsService {
 
+    // Общий экземпляр на всё приложение — чтобы все экраны видели одни и те же данные.
+    static let shared = TransactionsService()
+
     // Часть операций — сегодня, часть — вчера, у каждой своё время (чтобы была видна сортировка по дате).
     private var transactions: [Transaction] = {
         let calendar = Calendar.current

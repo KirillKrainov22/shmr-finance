@@ -8,6 +8,7 @@ struct TransactionsListView: View {
     @State private var showAddTransaction = false
     @State private var showAnalytics = false
     @State private var showDatePicker = false
+    @State private var transactionToEdit: Transaction?
 
     init(direction: Direction) {
         // @State нельзя присвоить напрямую в init — только через State(initialValue:).
@@ -25,6 +26,10 @@ struct TransactionsListView: View {
                 List {
                     ForEach(Array(viewModel.sortedTransactions.enumerated()), id: \.element.id) { index, transaction in
                         row(for: transaction)
+                            .contentShape(Rectangle()) // тапабельна вся строка
+                            .onTapGesture {
+                                transactionToEdit = transaction
+                            }
                             // У первой строки List сам не рисует верхний сепаратор — включаем.
                             .listRowSeparator(index == 0 ? .visible : .automatic, edges: .top)
                     }
@@ -45,7 +50,14 @@ struct TransactionsListView: View {
                 SettingsView(direction: viewModel.direction)
             }
             .sheet(isPresented: $showAddTransaction) {
-                Text("Новая операция (заглушка)")
+                TransactionEditView(mode: .create, direction: viewModel.direction) {
+                    Task { await viewModel.load() }
+                }
+            }
+            .sheet(item: $transactionToEdit) { transaction in
+                TransactionEditView(mode: .edit(transaction), direction: viewModel.direction) {
+                    Task { await viewModel.load() }
+                }
             }
             .sheet(isPresented: $showDatePicker) {
                 datePickerSheet

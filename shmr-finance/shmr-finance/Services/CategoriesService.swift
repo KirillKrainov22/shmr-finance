@@ -3,6 +3,9 @@ import Foundation
 // Сервис категорий. Мок: данные захардкожены в коде.
 final class CategoriesService {
 
+    // Общий экземпляр на всё приложение.
+    static let shared = CategoriesService()
+
     private let allCategories: [Category] = [
         Category(id: 1, name: "Зарплата", emoji: "💰", direction: .income),
         Category(id: 2, name: "Подработка", emoji: "💸", direction: .income),
@@ -22,3 +25,4 @@ final class CategoriesService {
         }
     }
 }
+

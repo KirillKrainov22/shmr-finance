@@ -30,8 +30,8 @@ final class TransactionsListViewModel {
     // Категории по id — чтобы по categoryId операции найти эмодзи и название.
     var categoriesById: [Int: Category] = [:]
 
-    private let transactionsService = TransactionsService()
-    private let categoriesService = CategoriesService()
+    private let transactionsService = TransactionsService.shared
+    private let categoriesService = CategoriesService.shared
 
     init(direction: Direction) {
         self.direction = direction

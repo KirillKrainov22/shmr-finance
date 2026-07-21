@@ -10,7 +10,7 @@ final class CategoriesViewModel {
     var searchText = ""
     var categories: [Category] = []
 
-    private let service = CategoriesService()
+    private let service = CategoriesService.shared
 
     init(direction: Direction?) {
         self.direction = direction

@@ -45,6 +45,7 @@ struct BalanceCorrectionView: View {
             }
             .presentationDetents([.medium, .large])
         }
+        .presentationBackground(Color(.systemBackground)) // белый фон, как у формы операции
     }
 
     // Сумма по центру, крупным rounded-шрифтом, с подчёркиванием. Тап — системная клавиатура.

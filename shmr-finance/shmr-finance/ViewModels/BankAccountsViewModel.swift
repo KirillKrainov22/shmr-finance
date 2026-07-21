@@ -7,7 +7,7 @@ final class BankAccountsViewModel {
 
     var accounts: [BankAccount] = []
 
-    private let service = BankAccountsService()
+    private let service = BankAccountsService.shared
 
     // Общий баланс — сумма балансов всех счетов.
     var totalBalance: Decimal {
