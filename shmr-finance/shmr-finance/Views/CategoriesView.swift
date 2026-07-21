@@ -20,7 +20,8 @@ struct CategoriesView: View {
         return NavigationStack {
             List(viewModel.filteredCategories) { category in
                 row(for: category)
-                    .contentShape(Rectangle()) // тапабельна вся строка
+                    .frame(maxWidth: .infinity, alignment: .leading) // ячейка на всю ширину
+                    .contentShape(Rectangle()) // тапабельна вся строка, а не только эмодзи с текстом
                     .onTapGesture {
                         onSelect?(category)
                         if onSelect != nil {

@@ -9,6 +9,7 @@ struct TransactionEditView: View {
     @State private var showCategoryPicker = false
     @State private var showAccountPicker = false
     @State private var showDatePicker = false
+    @State private var detent: PresentationDetent = .medium
 
     // Колбэк, чтобы список обновился после сохранения/удаления.
     private let onFinish: () -> Void
@@ -22,8 +23,9 @@ struct TransactionEditView: View {
         @Bindable var viewModel = viewModel
 
         return NavigationStack {
-            VStack(spacing: 0) {
-                amountField
+            ScrollView {
+                VStack(spacing: 0) {
+                    amountField
 
                 // Статья — по тапу открывается выбор.
                 Button {
@@ -35,24 +37,35 @@ struct TransactionEditView: View {
 
                 Divider()
 
-                // Дата и время — одна строка, по тапу открывается календарь с временем.
+                // Дата и время — по тапу календарь разворачивается прямо в форме.
                 Button {
-                    showDatePicker = true
+                    showDatePicker.toggle()
+                    // Двигаем высоту листа вместе с раскрытием календаря.
+                    detent = showDatePicker ? .large : .medium
                 } label: {
                     HStack {
                         Text("Дата и время")
                         Spacer()
-                        Text(
-                            viewModel.date,
-                            format: .dateTime.day().month(.wide).hour().minute()
-                        )
-                        .foregroundStyle(.secondary)
+                        Text(dateTimeText)
+                            .foregroundStyle(.secondary)
                     }
                     .padding(.horizontal, 16)
                     .padding(.vertical, 14)
                     .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
+
+                if showDatePicker {
+                    DatePicker(
+                        "",
+                        selection: $viewModel.date,
+                        in: ...Date(), // нельзя выбрать день позже текущего
+                        displayedComponents: [.date, .hourAndMinute]
+                    )
+                    .datePickerStyle(.graphical)
+                    .labelsHidden()
+                    .padding(.horizontal, 8)
+                }
 
                 Divider()
 
@@ -87,7 +100,7 @@ struct TransactionEditView: View {
                     }
                 }
 
-                Spacer()
+                }
             }
             .environment(\.locale, Locale(identifier: "ru_RU"))
             .scrollDismissesKeyboard(.interactively)
@@ -115,15 +128,12 @@ struct TransactionEditView: View {
                     viewModel.account = selected
                 }
             }
-            .sheet(isPresented: $showDatePicker) {
-                datePickerSheet
-            }
             .task {
                 await viewModel.load()
             }
         }
-        // Тот же размер, что у «Корректировки баланса».
-        .presentationDetents([.medium, .large])
+        // При открытом календаре в наборе только .large — лист вынужден подняться вверх, но не поднимается(
+        .presentationDetents(showDatePicker ? [.large] : [.medium, .large], selection: $detent)
         .presentationBackground(Color(.systemBackground))
     }
 
@@ -135,6 +145,13 @@ struct TransactionEditView: View {
                     .keyboardType(.decimalPad)
                     .multilineTextAlignment(.center)
                     .frame(width: fieldWidth)
+                    .onChange(of: viewModel.amountText) { _, newValue in
+                        // Только цифры и один разделитель (по локали пользователя).
+                        let cleaned = filteredAmount(newValue)
+                        if cleaned != newValue {
+                            viewModel.amountText = cleaned
+                        }
+                    }
                 Text("₽")
                     .foregroundStyle(.secondary)
             }
@@ -184,29 +201,6 @@ struct TransactionEditView: View {
         .buttonStyle(.plain)
     }
 
-    // Календарь + время в одном месте, как в макете.
-    private var datePickerSheet: some View {
-        @Bindable var viewModel = viewModel
-
-        return NavigationStack {
-            DatePicker(
-                "Дата и время",
-                selection: $viewModel.date,
-                displayedComponents: [.date, .hourAndMinute]
-            )
-            .datePickerStyle(.graphical)
-            .padding()
-            .toolbar {
-                ToolbarItem(placement: .confirmationAction) {
-                    Button("Готово") {
-                        showDatePicker = false
-                    }
-                }
-            }
-        }
-        .presentationDetents([.medium])
-    }
-
     private var title: String {
         switch viewModel.mode {
         case .create:
@@ -226,6 +220,18 @@ struct TransactionEditView: View {
         }
     }
 
+    // «21 июня, 12:34» — дата и время через запятую (системный формат вставляет «в»).
+    private var dateTimeText: String {
+        let locale = Locale(identifier: "ru_RU")
+        let day = viewModel.date.formatted(
+            .dateTime.day().month(.wide).locale(locale)
+        )
+        let time = viewModel.date.formatted(
+            .dateTime.hour().minute().locale(locale)
+        )
+        return "\(day), \(time)"
+    }
+
     // Подтверждение: сохраняем операцию.
     private func confirm() {
         Task {
@@ -233,6 +239,32 @@ struct TransactionEditView: View {
             onFinish()
             dismiss()
         }
+    }
+
+    // Только цифры и один разделитель (символ разделителя — из локали пользователя),
+    // максимум 2 знака после разделителя.
+    private func filteredAmount(_ input: String) -> String {
+        let separator = Locale.current.decimalSeparator?.first ?? ","
+        var result = ""
+        var hasSeparator = false
+        var decimalCount = 0
+        for character in input {
+            if character.isNumber {
+                if hasSeparator {
+                    if decimalCount < 2 {
+                        result.append(character)
+                        decimalCount += 1
+                    }
+                } else {
+                    result.append(character)
+                }
+            } else if (character == "." || character == ",") && hasSeparator == false {
+                // Любой введённый разделитель приводим к разделителю локали.
+                result.append(separator)
+                hasSeparator = true
+            }
+        }
+        return result
     }
 }
 

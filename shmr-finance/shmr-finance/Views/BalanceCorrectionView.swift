@@ -139,14 +139,15 @@ struct BalanceCorrectionView: View {
     }
 
     private var dateText: String {
-        date.formatted(
-            .dateTime
-                .day()
-                .month(.wide)
-                .hour()
-                .minute()
-                .locale(Locale(identifier: "ru_RU"))
+        // «20 февраля, 23:42» — дата и время через запятую (системный формат вставляет «в»).
+        let locale = Locale(identifier: "ru_RU")
+        let day = date.formatted(
+            .dateTime.day().month(.wide).locale(locale)
         )
+        let time = date.formatted(
+            .dateTime.hour().minute().locale(locale)
+        )
+        return "\(day), \(time)"
     }
 
     private var currencySymbol: String {
