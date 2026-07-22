@@ -45,9 +45,10 @@ struct AccountPickerView: View {
                 }
             }
             .task {
-                accounts = await service.bankAccounts()
+                accounts = (try? await service.bankAccounts()) ?? []
             }
         }
         .presentationDetents([.medium, .large])
     }
 }
+

@@ -7,6 +7,11 @@ final class BankAccountsViewModel {
 
     var accounts: [BankAccount] = []
 
+    // Состояние загрузки и ошибки для экрана.
+    var isLoading = false
+    var showError = false
+    var errorMessage = ""
+
     private let service = BankAccountsService.shared
 
     // Общий баланс — сумма балансов всех счетов.
@@ -22,15 +27,40 @@ final class BankAccountsViewModel {
     }
 
     func load() async {
-        accounts = await service.bankAccounts()
+        isLoading = true
+        defer {
+            isLoading = false
+        }
+
+        do {
+            accounts = try await service.bankAccounts()
+        } catch {
+            guard isCancellationError(error) == false else {
+                return
+            }
+            errorMessage = userErrorMessage(from: error)
+            showError = true
+        }
     }
 
     // Корректировка баланса счёта — вызывает BankAccountsService и перезагружает данные.
     func updateBalance(of account: BankAccount, to newBalance: Decimal) async {
-        var updated = account
-        updated.balance = newBalance
-        _ = await service.updateAccount(updated)
-        await load()
+        isLoading = true
+        defer {
+            isLoading = false
+        }
+
+        do {
+            var updated = account
+            updated.balance = newBalance
+            _ = try await service.updateAccount(updated)
+            accounts = try await service.bankAccounts()
+        } catch {
+            guard isCancellationError(error) == false else {
+                return
+            }
+            errorMessage = userErrorMessage(from: error)
+            showError = true
+        }
     }
 }
-

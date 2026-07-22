@@ -1,98 +1,61 @@
 import Foundation
 
-// Сервис операций. Мок: держит операции в памяти и умеет их отдавать за период, создавать, редактировать и удалять.
+// Сервис операций: данные с бэкенда через NetworkClient.
 final class TransactionsService {
 
-    // Общий экземпляр на всё приложение — чтобы все экраны видели одни и те же данные.
+    // Общий экземпляр на всё приложение.
     static let shared = TransactionsService()
 
-    // Часть операций — сегодня, часть — вчера, у каждой своё время (чтобы была видна сортировка по дате).
-    private var transactions: [Transaction] = {
-        let calendar = Calendar.current
-        let today = Date()
-        let yesterday = calendar.date(byAdding: .day, value: -1, to: today) ?? today
+    private let client = NetworkClient.shared
 
-        func time(_ hour: Int, _ minute: Int, on day: Date) -> Date {
-            return calendar.date(bySettingHour: hour, minute: minute, second: 0, of: day) ?? day
+    // Операции за период. Эндпоинт привязан к счёту,
+    // поэтому берём основной (первый) счёт пользователя.
+    func transactions(from startDate: Date, to endDate: Date) async throws -> [Transaction] {
+        let accounts = try await BankAccountsService.shared.bankAccounts()
+        guard let account = accounts.first else {
+            return []
         }
 
-        return [
-            Transaction(
-                id: 1,
-                accountId: 1,
-                categoryId: 1,
-                amount: 320_500,
-                transactionDate: time(9, 0, on: today),
-                comment: "Зарплата за месяц",
-                createdAt: today,
-                updatedAt: today
-            ),
-            Transaction(
-                id: 2,
-                accountId: 1,
-                categoryId: 3,
-                amount: 1_200,
-                transactionDate: time(13, 30, on: today),
-                comment: nil,
-                createdAt: today,
-                updatedAt: today
-            ),
-            Transaction(
-                id: 3,
-                accountId: 1,
-                categoryId: 4,
-                amount: 450,
-                transactionDate: time(20, 15, on: today),
-                comment: "Обед в кафе",
-                createdAt: today,
-                updatedAt: today
-            ),
-            Transaction(
-                id: 4,
-                accountId: 1,
-                categoryId: 5,
-                amount: 900,
-                transactionDate: time(8, 45, on: yesterday),
-                comment: "Такси",
-                createdAt: yesterday,
-                updatedAt: yesterday
-            ),
-            Transaction(
-                id: 5,
-                accountId: 1,
-                categoryId: 2,
-                amount: 15_000,
-                transactionDate: time(19, 20, on: yesterday),
-                comment: "Фриланс",
-                createdAt: yesterday,
-                updatedAt: yesterday
-            )
+        // endDate у нас — начало следующего дня; вычитаем секунду,
+        // чтобы в "yyyy-MM-dd" не уехать на день вперёд.
+        let inclusiveEnd = endDate.addingTimeInterval(-1)
+        let queryItems = [
+            URLQueryItem(name: "startDate", value: APIDate.dayString(from: startDate)),
+            URLQueryItem(name: "endDate", value: APIDate.dayString(from: inclusiveEnd))
         ]
-    }()
 
-    func transactions(from startDate: Date, to endDate: Date) async -> [Transaction] {
-        return transactions.filter { transaction in
-            transaction.transactionDate >= startDate && transaction.transactionDate <= endDate
+        let dtos: [TransactionResponseDTO] = try await client.request(
+            path: "transactions/account/\(account.id)/period",
+            queryItems: queryItems
+        )
+        return dtos.compactMap { dto in
+            dto.toDomain()
         }
     }
 
-    func createTransaction(_ transaction: Transaction) async {
-        transactions.append(transaction)
+    func createTransaction(_ transaction: Transaction) async throws {
+        let requestBody = TransactionRequestDTO(transaction: transaction)
+        let _: TransactionDTO = try await client.request(
+            path: "transactions",
+            method: "POST",
+            body: requestBody
+        )
     }
 
-    func updateTransaction(_ transaction: Transaction) async {
-        let index = transactions.firstIndex(where: { existing in
-            existing.id == transaction.id
-        })
-        if let index = index {
-            transactions[index] = transaction
-        }
+    func updateTransaction(_ transaction: Transaction) async throws {
+        let requestBody = TransactionRequestDTO(transaction: transaction)
+        let _: TransactionResponseDTO = try await client.request(
+            path: "transactions/\(transaction.id)",
+            method: "PUT",
+            body: requestBody
+        )
     }
 
-    func deleteTransaction(id: Int) async {
-        transactions.removeAll(where: { transaction in
-            transaction.id == id
-        })
+    func deleteTransaction(id: Int) async throws {
+        try await client.requestNoResponse(
+            path: "transactions/\(id)",
+            method: "DELETE"
+        )
     }
 }
 

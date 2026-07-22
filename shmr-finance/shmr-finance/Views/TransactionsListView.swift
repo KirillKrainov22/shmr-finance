@@ -40,8 +40,19 @@ struct TransactionsListView: View {
             .background(backgroundColor)
             .environment(\.locale, Locale(identifier: "ru_RU")) // ₽ и русские даты на всём экране
             .toolbar(.hidden, for: .navigationBar)
+            .overlay {
+                if viewModel.isLoading {
+                    ProgressView()
+                        .controlSize(.large)
+                }
+            }
             .overlay(alignment: .bottomTrailing) {
                 addButton
+            }
+            .alert("Ошибка", isPresented: $viewModel.showError) {
+                Button("Ок", role: .cancel) {}
+            } message: {
+                Text(viewModel.errorMessage)
             }
             .navigationDestination(isPresented: $showAnalytics) {
                 AnalyticsView()

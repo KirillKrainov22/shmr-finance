@@ -13,7 +13,9 @@ struct AccountsView: View {
     @State private var isBalanceHidden = false
 
     var body: some View {
-        NavigationStack {
+        @Bindable var viewModel = viewModel
+
+        return NavigationStack {
             ScrollView {
                 // pinnedViews: заголовок секции "прилипает" сверху и перекрывает
                 // строки при обычном скролле, но при оттягивании вниз (pull to
@@ -46,8 +48,19 @@ struct AccountsView: View {
             .background(backgroundColor)
             .environment(\.locale, Locale(identifier: "ru_RU"))
             .toolbar(.hidden, for: .navigationBar)
+            .overlay {
+                if viewModel.isLoading {
+                    ProgressView()
+                        .controlSize(.large)
+                }
+            }
             .overlay(alignment: .bottomTrailing) {
                 addButton
+            }
+            .alert("Ошибка", isPresented: $viewModel.showError) {
+                Button("Ок", role: .cancel) {}
+            } message: {
+                Text(viewModel.errorMessage)
             }
             .navigationDestination(isPresented: $showAnalytics) {
                 AnalyticsView()
@@ -222,4 +235,5 @@ struct AccountsView: View {
 #Preview {
     AccountsView()
 }
+
 

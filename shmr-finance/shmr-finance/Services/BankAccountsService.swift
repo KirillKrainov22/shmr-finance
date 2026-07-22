@@ -1,36 +1,34 @@
 import Foundation
 
-// Сервис банковских счетов. Мок: данные захардкожены в коде.
+// Сервис банковских счетов: данные с бэкенда через NetworkClient.
 final class BankAccountsService {
 
-    // Общий экземпляр на всё приложение — единый источник данных для всех экранов.
+    // Общий экземпляр на всё приложение.
     static let shared = BankAccountsService()
 
-    private var accounts: [BankAccount] = [
-        BankAccount(id: 1, name: "Яндекс Pay", balance: 1200, currency: "RUB"),
-        BankAccount(id: 2, name: "Газпромбанк", balance: 320_500, currency: "RUB"),
-        BankAccount(id: 3, name: "Сбербанк", balance: 1_000_744, currency: "RUB")
-    ]
+    private let client = NetworkClient.shared
 
-    func bankAccounts() async -> [BankAccount] {
-        return accounts
+    func bankAccounts() async throws -> [BankAccount] {
+        let dtos: [AccountDTO] = try await client.request(path: "accounts")
+        return dtos.compactMap { dto in
+            dto.toDomain()
+        }
     }
 
     // Выбранный счёт по его id.
-    func account(id: Int) async -> BankAccount? {
-        return accounts.first(where: { account in
-            account.id == id
-        })
+    func account(id: Int) async throws -> BankAccount? {
+        let dto: AccountDTO = try await client.request(path: "accounts/\(id)")
+        return dto.toDomain()
     }
 
-    func updateAccount(_ account: BankAccount) async -> BankAccount {
-        let index = accounts.firstIndex(where: { existing in
-            existing.id == account.id
-        })
-        if let index = index {
-            accounts[index] = account
-        }
-        return account
+    @discardableResult
+    func updateAccount(_ account: BankAccount) async throws -> BankAccount? {
+        let dto: AccountDTO = try await client.request(
+            path: "accounts/\(account.id)",
+            method: "PUT",
+            body: AccountUpdateRequestDTO(account: account)
+        )
+        return dto.toDomain()
     }
 }
 

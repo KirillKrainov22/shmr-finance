@@ -21,6 +21,11 @@ final class TransactionFormViewModel {
     var date: Date
     var comment: String
 
+    // Состояние загрузки и ошибки для экрана.
+    var isLoading = false
+    var showError = false
+    var errorMessage = ""
+
     private let transactionsService = TransactionsService.shared
 
     init(mode: Mode, direction: Direction) {
@@ -67,66 +72,112 @@ final class TransactionFormViewModel {
 
     // Подтягиваем связанные объекты (для режима редактирования) и дефолтный счёт (для создания).
     func load() async {
-        let accounts = await BankAccountsService.shared.bankAccounts()
-        let categories = await CategoriesService.shared.categories()
+        isLoading = true
+        defer {
+            isLoading = false
+        }
 
-        switch mode {
-        case .create:
-            // По умолчанию — первый счёт пользователя.
-            account = accounts.first
-        case .edit(let transaction):
-            category = categories.first { $0.id == transaction.categoryId }
-            account = accounts.first { $0.id == transaction.accountId }
+        do {
+            let accounts = try await BankAccountsService.shared.bankAccounts()
+            let categories = try await CategoriesService.shared.categories()
+
+            switch mode {
+            case .create:
+                // По умолчанию — первый счёт пользователя.
+                account = accounts.first
+            case .edit(let transaction):
+                category = categories.first { $0.id == transaction.categoryId }
+                account = accounts.first { $0.id == transaction.accountId }
+            }
+        } catch {
+            guard isCancellationError(error) == false else {
+                return
+            }
+            errorMessage = userErrorMessage(from: error)
+            showError = true
         }
     }
 
-    // Сохранение: создать или обновить операцию.
-    func save() async {
+    // Сохранение: создать или обновить операцию. Возвращает true при успехе.
+    @discardableResult
+    func save() async -> Bool {
         guard
             let category,
             let account,
             let amount = parsedAmount
         else {
-            return
+            return false
         }
 
         let trimmedComment = comment.trimmingCharacters(in: .whitespacesAndNewlines)
         let commentOrNil = trimmedComment.isEmpty ? nil : trimmedComment
         let now = Date()
 
-        switch mode {
-        case .create:
-            let transaction = Transaction(
-                id: Int(Date().timeIntervalSince1970), // временный id для мока
-                accountId: account.id,
-                categoryId: category.id,
-                amount: amount,
-                transactionDate: date,
-                comment: commentOrNil,
-                createdAt: now,
-                updatedAt: now
-            )
-            await transactionsService.createTransaction(transaction)
-        case .edit(let original):
-            let updated = Transaction(
-                id: original.id,
-                accountId: account.id,
-                categoryId: category.id,
-                amount: amount,
-                transactionDate: date,
-                comment: commentOrNil,
-                createdAt: original.createdAt,
-                updatedAt: now
-            )
-            await transactionsService.updateTransaction(updated)
+        isLoading = true
+        defer {
+            isLoading = false
+        }
+
+        do {
+            switch mode {
+            case .create:
+                let transaction = Transaction(
+                    id: 0, // id выдаёт бэкенд
+                    accountId: account.id,
+                    categoryId: category.id,
+                    amount: amount,
+                    transactionDate: date,
+                    comment: commentOrNil,
+                    createdAt: now,
+                    updatedAt: now
+                )
+                try await transactionsService.createTransaction(transaction)
+            case .edit(let original):
+                let updated = Transaction(
+                    id: original.id,
+                    accountId: account.id,
+                    categoryId: category.id,
+                    amount: amount,
+                    transactionDate: date,
+                    comment: commentOrNil,
+                    createdAt: original.createdAt,
+                    updatedAt: now
+                )
+                try await transactionsService.updateTransaction(updated)
+            }
+            return true
+        } catch {
+            guard isCancellationError(error) == false else {
+                return false
+            }
+            errorMessage = userErrorMessage(from: error)
+            showError = true
+            return false
         }
     }
 
-    // Удаление (только в режиме редактирования).
-    func delete() async {
+    // Удаление (только в режиме редактирования). Возвращает true при успехе.
+    @discardableResult
+    func delete() async -> Bool {
         guard case .edit(let transaction) = mode else {
-            return
+            return false
         }
-        await transactionsService.deleteTransaction(id: transaction.id)
+
+        isLoading = true
+        defer {
+            isLoading = false
+        }
+
+        do {
+            try await transactionsService.deleteTransaction(id: transaction.id)
+            return true
+        } catch {
+            guard isCancellationError(error) == false else {
+                return false
+            }
+            errorMessage = userErrorMessage(from: error)
+            showError = true
+            return false
+        }
     }
 }

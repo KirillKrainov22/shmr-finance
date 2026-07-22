@@ -54,6 +54,17 @@ struct CategoriesView: View {
                     DefaultToolbarItem(kind: .search, placement: .bottomBar)
                 }
             }
+            .overlay {
+                if viewModel.isLoading {
+                    ProgressView()
+                        .controlSize(.large)
+                }
+            }
+            .alert("Ошибка", isPresented: $viewModel.showError) {
+                Button("Ок", role: .cancel) {}
+            } message: {
+                Text(viewModel.errorMessage)
+            }
             .task {
                 await viewModel.load()
             }

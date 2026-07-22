@@ -89,9 +89,11 @@ struct TransactionEditView: View {
                     Divider()
                     Button(role: .destructive) {
                         Task {
-                            await viewModel.delete()
-                            onFinish()
-                            dismiss()
+                            // Закрываем форму только если удаление прошло успешно.
+                            if await viewModel.delete() {
+                                onFinish()
+                                dismiss()
+                            }
                         }
                     } label: {
                         Text("Удалить операцию")
@@ -133,6 +135,17 @@ struct TransactionEditView: View {
                 Button("Ок", role: .cancel) {}
             } message: {
                 Text(validationMessage)
+            }
+            .alert("Ошибка", isPresented: $viewModel.showError) {
+                Button("Ок", role: .cancel) {}
+            } message: {
+                Text(viewModel.errorMessage)
+            }
+            .overlay {
+                if viewModel.isLoading {
+                    ProgressView()
+                        .controlSize(.large)
+                }
             }
             .task {
                 await viewModel.load()
@@ -260,9 +273,11 @@ struct TransactionEditView: View {
             return
         }
         Task {
-            await viewModel.save()
-            onFinish()
-            dismiss()
+            // Закрываем форму только если сохранение прошло успешно.
+            if await viewModel.save() {
+                onFinish()
+                dismiss()
+            }
         }
     }
 

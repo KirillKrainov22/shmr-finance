@@ -1,27 +1,26 @@
 import Foundation
 
-// Сервис категорий. Мок: данные захардкожены в коде.
+// Сервис категорий: данные с бэкенда через NetworkClient.
 final class CategoriesService {
 
     // Общий экземпляр на всё приложение.
     static let shared = CategoriesService()
 
-    private let allCategories: [Category] = [
-        Category(id: 1, name: "Зарплата", emoji: "💰", direction: .income),
-        Category(id: 2, name: "Подработка", emoji: "💸", direction: .income),
-        Category(id: 3, name: "Продукты", emoji: "🛒", direction: .outcome),
-        Category(id: 4, name: "Кафе", emoji: "☕️", direction: .outcome),
-        Category(id: 5, name: "Транспорт", emoji: "🚕", direction: .outcome),
-        Category(id: 6, name: "Развлечения", emoji: "🎮", direction: .outcome)
-    ]
+    private let client = NetworkClient.shared
 
-    func categories() async -> [Category] {
-        return allCategories
+    func categories() async throws -> [Category] {
+        let dtos: [CategoryDTO] = try await client.request(path: "categories")
+        return dtos.compactMap { dto in
+            dto.toDomain()
+        }
     }
 
-    func categories(direction: Direction) async -> [Category] {
-        return allCategories.filter { category in
-            category.direction == direction
+    func categories(direction: Direction) async throws -> [Category] {
+        let dtos: [CategoryDTO] = try await client.request(
+            path: "categories/type/\(direction.isIncome)"
+        )
+        return dtos.compactMap { dto in
+            dto.toDomain()
         }
     }
 }

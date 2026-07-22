@@ -10,6 +10,11 @@ final class CategoriesViewModel {
     var searchText = ""
     var categories: [Category] = []
 
+    // Состояние загрузки и ошибки для экрана.
+    var isLoading = false
+    var showError = false
+    var errorMessage = ""
+
     private let service = CategoriesService.shared
 
     init(direction: Direction?) {
@@ -44,11 +49,23 @@ final class CategoriesViewModel {
     }
 
     func load() async {
-        if let direction {
-            categories = await service.categories(direction: direction)
-        } else {
-            categories = await service.categories()
+        isLoading = true
+        defer {
+            isLoading = false
+        }
+
+        do {
+            if let direction {
+                categories = try await service.categories(direction: direction)
+            } else {
+                categories = try await service.categories()
+            }
+        } catch {
+            guard isCancellationError(error) == false else {
+                return
+            }
+            errorMessage = userErrorMessage(from: error)
+            showError = true
         }
     }
 }
-
