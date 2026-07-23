@@ -35,7 +35,6 @@ playground.xcworkspace
 ### SwiftPM ###
 Packages
 xcuserdata
-*.xcodeproj
 
 ### Xcode Patch ###
 *.xcodeproj/*
@@ -45,3 +44,4 @@ xcuserdata
 !*.xcworkspace/contents.xcworkspacedata
 /*.gcno
 **/xcshareddata/WorkspaceSettings.xcsettings
+.DS_Store
