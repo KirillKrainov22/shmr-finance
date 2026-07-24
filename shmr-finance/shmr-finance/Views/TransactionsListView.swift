@@ -26,6 +26,7 @@ struct TransactionsListView: View {
                 List {
                     ForEach(Array(viewModel.sortedTransactions.enumerated()), id: \.element.id) { index, transaction in
                         row(for: transaction)
+                            .listRowBackground(backgroundColor) // фон строки = фон экрана
                             .contentShape(Rectangle()) // тапабельна вся строка
                             .onTapGesture {
                                 transactionToEdit = transaction
@@ -200,7 +201,7 @@ struct TransactionsListView: View {
             Text(transaction.amount, format: currencyFormat)
                 .font(.system(size: 14, weight: .medium))
         }
-        .padding(.vertical, 8)
+        .padding(.vertical, 3)
     }
 
     private var addButton: some View {
@@ -238,4 +239,5 @@ struct TransactionsListView: View {
 #Preview {
     TransactionsListView(direction: .outcome)
 }
+
 

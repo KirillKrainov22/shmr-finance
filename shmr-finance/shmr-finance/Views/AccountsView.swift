@@ -16,34 +16,29 @@ struct AccountsView: View {
         @Bindable var viewModel = viewModel
 
         return NavigationStack {
-            ScrollView {
-                // pinnedViews: заголовок секции "прилипает" сверху и перекрывает
-                // строки при обычном скролле, но при оттягивании вниз (pull to
-                // refresh) уходит вместе с контентом, открывая индикатор обновления.
-                LazyVStack(spacing: 0, pinnedViews: [.sectionHeaders]) {
-                    Section {
-                        ForEach(Array(viewModel.accounts.enumerated()), id: \.element.id) { index, account in
-                            row(for: account)
-                                .padding(.horizontal, 20)
-                                .contentShape(Rectangle())
-                                .onTapGesture {
-                                    accountToCorrect = account
-                                }
-                            if index != viewModel.accounts.count - 1 {
-                                Divider().padding(.leading, 20)
+            VStack(spacing: 0) {
+                topBar
+                balanceHeader
+
+                // Тот же List, что и на экранах операций — тогда сепараторы,
+                // высота строк и фон совпадают один-в-один автоматически.
+                List {
+                    ForEach(Array(viewModel.accounts.enumerated()), id: \.element.id) { index, account in
+                        row(for: account)
+                            .listRowBackground(backgroundColor) // фон строки = фон экрана
+                            .contentShape(Rectangle()) // тапабельна вся строка
+                            .onTapGesture {
+                                accountToCorrect = account
                             }
-                        }
-                    } header: {
-                        VStack(spacing: 0) {
-                            topBar
-                            balanceHeader
-                        }
-                        .background(backgroundColor)
+                            // У первой строки List сам не рисует верхний сепаратор — включаем.
+                            .listRowSeparator(index == 0 ? .visible : .automatic, edges: .top)
                     }
                 }
-            }
-            .refreshable {
-                await viewModel.load()
+                .listStyle(.plain)
+                .scrollContentBackground(.hidden) // прячем белый фон списка, чтобы был виден фон экрана
+                .refreshable {
+                    await viewModel.load()
+                }
             }
             .background(backgroundColor)
             .environment(\.locale, Locale(identifier: "ru_RU"))
@@ -207,7 +202,7 @@ struct AccountsView: View {
             Text(account.balance, format: currencyFormat)
                 .font(.system(size: 14, weight: .medium))
         }
-        .padding(.vertical, 8)
+        .padding(.vertical, 3)
     }
 
     private var addButton: some View {
@@ -235,5 +230,6 @@ struct AccountsView: View {
 #Preview {
     AccountsView()
 }
+
 
 

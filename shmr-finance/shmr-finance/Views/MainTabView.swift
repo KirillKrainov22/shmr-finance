@@ -1,6 +1,6 @@
 import SwiftUI
 
-//Корневой экран приложения — таб-бар с тремя вкладками.
+// Корневой экран приложения — таб-бар с тремя вкладками.
 struct MainTabView: View {
     var body: some View {
         TabView {
@@ -17,8 +17,10 @@ struct MainTabView: View {
             AccountsView()
                 .tabItem {
                     Label("Счета", systemImage: "wallet.bifold").environment(\.symbolVariants, .none)
-                    }
+                }
         }
+        // Приложение всегда в светлой теме, даже если на телефоне включена тёмная.
+        .preferredColorScheme(.light)
     }
 }
 
