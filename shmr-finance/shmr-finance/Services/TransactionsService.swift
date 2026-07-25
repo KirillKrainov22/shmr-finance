@@ -1,6 +1,7 @@
 import Foundation
 
-// Сервис операций: данные с бэкенда через NetworkClient, копия — в локальном хранилище.
+// Сервис операций. Онлайн работает через NetworkClient и дублирует данные локально.
+// Офлайн отдаёт локальную копию, а изменения складывает в бэкап до появления связи.
 final class TransactionsService {
 
     // Общий экземпляр на всё приложение.
@@ -8,10 +9,14 @@ final class TransactionsService {
 
     private let client = NetworkClient.shared
     private let storage = LocalStorages.transactions
+    private let backup = LocalStorages.transactionsBackup
 
     // Операции за период. Эндпоинт привязан к счёту,
     // поэтому берём основной (первый) счёт пользователя.
     func transactions(from startDate: Date, to endDate: Date) async throws -> [Transaction] {
+        // По ТЗ: перед походом в сеть пытаемся отдать серверу то, что накопилось офлайн.
+        await syncBackup()
+
         do {
             let accounts = try await BankAccountsService.shared.bankAccounts()
             guard let account = accounts.first else {
@@ -41,57 +46,252 @@ final class TransactionsService {
     }
 
     func createTransaction(_ transaction: Transaction) async throws {
-        let requestBody = TransactionRequestDTO(transaction: transaction)
-        let dto: TransactionDTO = try await client.request(
-            path: "transactions",
-            method: "POST",
-            body: requestBody
-        )
-        // Локально сохраняем ответ сервера, а не то, что отправляли:
-        // настоящий id операции известен только серверу.
-        if let created = dto.toDomain() {
-            try? await storage?.create(created)
+        do {
+            let dto: TransactionDTO = try await client.request(
+                path: "transactions",
+                method: "POST",
+                body: TransactionRequestDTO(transaction: transaction)
+            )
+            // Локально сохраняем ответ сервера, а не то, что отправляли:
+            // настоящий id операции известен только серверу.
+            if let created = dto.toDomain() {
+                try? await storage?.create(created)
+            }
+        } catch {
+            guard isOfflineError(error) else {
+                throw error
+            }
+            // Сервер id не выдал — живём с временным до синхронизации.
+            let local = transaction.replacingID(with: LocalTransactionID.next())
+            try? await storage?.create(local)
+            try? await backup?.add(local, action: .create)
+
+            let delta = await signedAmount(of: local)
+            await BankAccountsService.shared.applyBalanceChange(delta, accountId: local.accountId)
         }
     }
 
     func updateTransaction(_ transaction: Transaction) async throws {
-        let requestBody = TransactionRequestDTO(transaction: transaction)
-        let dto: TransactionResponseDTO = try await client.request(
-            path: "transactions/\(transaction.id)",
-            method: "PUT",
-            body: requestBody
-        )
-        if let updated = dto.toDomain() {
-            try? await storage?.update(updated)
+        // Операции, созданной офлайн, на сервере ещё нет — обновлять там нечего.
+        // Правим только то, что уйдёт при её создании.
+        guard LocalTransactionID.isLocal(transaction.id) == false else {
+            await updateLocally(transaction)
+            return
+        }
+
+        do {
+            let dto: TransactionResponseDTO = try await client.request(
+                path: "transactions/\(transaction.id)",
+                method: "PUT",
+                body: TransactionRequestDTO(transaction: transaction)
+            )
+            if let updated = dto.toDomain() {
+                try? await storage?.update(updated)
+            }
+            try? await backup?.remove(ids: [transaction.id])
+        } catch {
+            guard isOfflineError(error) else {
+                throw error
+            }
+            await updateLocally(transaction)
         }
     }
 
     func deleteTransaction(id: Int) async throws {
-        try await client.requestNoResponse(
-            path: "transactions/\(id)",
-            method: "DELETE"
-        )
-        try? await storage?.delete(id: id)
+        // Созданная офлайн и тут же удалённая операция до сервера не доедет вообще:
+        // правила слияния в бэкапе выбросят обе записи.
+        guard LocalTransactionID.isLocal(id) == false else {
+            await deleteLocally(id: id)
+            return
+        }
+
+        do {
+            try await client.requestNoResponse(
+                path: "transactions/\(id)",
+                method: "DELETE"
+            )
+            try? await storage?.delete(id: id)
+            try? await backup?.remove(ids: [id])
+        } catch {
+            guard isOfflineError(error) else {
+                throw error
+            }
+            await deleteLocally(id: id)
+        }
     }
 
-    // Сеть не ответила — отдаём последнее, что знаем.
+    // MARK: - Бэкап
+
+    // Выгружает накопленные изменения. Частично — это нормально:
+    // что ушло, то убираем из очереди, остальное ждёт следующего раза.
+    // Не private: BankAccountsService обязан выгрузить операции до своих счетов.
+    func syncBackup() async {
+        guard let backup else {
+            return
+        }
+        let entries = (try? await backup.getAll()) ?? []
+        guard entries.isEmpty == false else {
+            return
+        }
+
+        var syncedIDs: [Int] = []
+        for entry in entries {
+            do {
+                try await push(entry)
+                syncedIDs.append(entry.transaction.id)
+            } catch {
+                // Не ушло — оставляем в очереди и пробуем остальные.
+                continue
+            }
+        }
+
+        try? await backup.remove(ids: syncedIDs)
+    }
+
+    private func push(_ entry: TransactionBackupEntry) async throws {
+        switch entry.action {
+        case .create:
+            let dto: TransactionDTO = try await client.request(
+                path: "transactions",
+                method: "POST",
+                body: TransactionRequestDTO(transaction: entry.transaction)
+            )
+            guard let created = dto.toDomain() else {
+                return
+            }
+            // Временная запись заменяется на серверную, иначе операция задвоится:
+            // одна с локальным отрицательным id, вторая с настоящим.
+            try? await storage?.delete(id: entry.transaction.id)
+            try? await storage?.create(created)
+
+        case .update:
+            let dto: TransactionResponseDTO = try await client.request(
+                path: "transactions/\(entry.transaction.id)",
+                method: "PUT",
+                body: TransactionRequestDTO(transaction: entry.transaction)
+            )
+            if let updated = dto.toDomain() {
+                try? await storage?.update(updated)
+            }
+
+        case .delete:
+            try await client.requestNoResponse(
+                path: "transactions/\(entry.transaction.id)",
+                method: "DELETE"
+            )
+            try? await storage?.delete(id: entry.transaction.id)
+        }
+    }
+
+    // MARK: - Офлайн-изменения
+
+    private func updateLocally(_ transaction: Transaction) async {
+        let previous = await cachedTransaction(id: transaction.id)
+
+        try? await storage?.update(transaction)
+        try? await backup?.add(transaction, action: .update)
+
+        // Баланс двигаем на разницу: влияние старой версии убираем, новой — добавляем.
+        let newAmount = await signedAmount(of: transaction)
+        var oldAmount: Decimal = 0
+        if let previous {
+            oldAmount = await signedAmount(of: previous)
+        }
+
+        let accounts = BankAccountsService.shared
+        if let previous, previous.accountId != transaction.accountId {
+            // Операцию перенесли на другой счёт — правим оба.
+            await accounts.applyBalanceChange(-oldAmount, accountId: previous.accountId)
+            await accounts.applyBalanceChange(newAmount, accountId: transaction.accountId)
+        } else {
+            await accounts.applyBalanceChange(newAmount - oldAmount, accountId: transaction.accountId)
+        }
+    }
+
+    private func deleteLocally(id: Int) async {
+        // Для записи об удалении нужен сам объект операции — берём его из локальной копии.
+        guard let transaction = await cachedTransaction(id: id) else {
+            // Операции нет в локальной копии — значит и показать её пользователю
+            // мы не могли, удалять нечего.
+            return
+        }
+
+        try? await backup?.add(transaction, action: .delete)
+        try? await storage?.delete(id: id)
+
+        // Удаление откатывает влияние операции на баланс.
+        let amount = await signedAmount(of: transaction)
+        await BankAccountsService.shared.applyBalanceChange(-amount, accountId: transaction.accountId)
+    }
+
+    private func cachedTransaction(id: Int) async -> Transaction? {
+        let cached = (try? await storage?.getAll()) ?? []
+        return cached.first(where: { transaction in
+            transaction.id == id
+        })
+    }
+
+    // Сколько операция прибавляет к балансу: доход со знаком плюс, расход с минусом.
+    // Направление живёт в категории, поэтому читаем кеш категорий напрямую —
+    // идти через CategoriesService значило бы сначала обязательно упереться в сеть.
+    private func signedAmount(of transaction: Transaction) async -> Decimal {
+        let categories = (try? await LocalStorages.categories?.getAll()) ?? []
+        guard let category = categories.first(where: { category in
+            category.id == transaction.categoryId
+        }) else {
+            return 0
+        }
+        return category.direction.isIncome ? transaction.amount : -transaction.amount
+    }
+
+    // Сеть не ответила — собираем ответ из локальной копии и очереди изменений.
     private func cachedTransactions(
         from startDate: Date,
         to endDate: Date,
         networkError: Error
     ) async throws -> [Transaction] {
         let cached = (try? await storage?.getAll()) ?? []
+        let pending = (try? await backup?.getAll()) ?? []
 
-        // Пустое хранилище означает, что мы вообще ничего не загружали, —
-        // тут честнее показать ошибку, чем сделать вид, что операций нет.
+        // Пусто и там и там — мы вообще ничего не загружали.
+        // Тут честнее показать ошибку, чем сделать вид, что операций нет.
         // А вот пустая выборка за конкретный день — нормальный ответ.
-        guard cached.isEmpty == false else {
+        guard cached.isEmpty == false || pending.isEmpty == false else {
             throw networkError
         }
 
-        return cached.filter { transaction in
+        var merged: [Int: Transaction] = [:]
+        for transaction in cached {
+            merged[transaction.id] = transaction
+        }
+        // Бэкап поверх копии: это изменения, которых сервер ещё не видел.
+        for entry in pending {
+            switch entry.action {
+            case .create, .update:
+                merged[entry.transaction.id] = entry.transaction
+            case .delete:
+                merged.removeValue(forKey: entry.transaction.id)
+            }
+        }
+
+        return merged.values.filter { transaction in
             transaction.transactionDate >= startDate && transaction.transactionDate < endDate
         }
     }
 }
 
+private extension Transaction {
+    // Операция — структура с let-полями, поэтому «поменять id» значит собрать копию.
+    func replacingID(with newID: Int) -> Transaction {
+        Transaction(
+            id: newID,
+            accountId: accountId,
+            categoryId: categoryId,
+            amount: amount,
+            transactionDate: transactionDate,
+            comment: comment,
+            createdAt: createdAt,
+            updatedAt: updatedAt
+        )
+    }
+}

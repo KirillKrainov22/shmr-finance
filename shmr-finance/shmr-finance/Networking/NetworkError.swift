@@ -35,6 +35,18 @@ func userErrorMessage(from error: Error) -> String {
     return "Что-то пошло не так. Попробуйте ещё раз."
 }
 
+// Обрыв связи, а не отказ сервера. Откладывать в бэкап имеет смысл только такие ошибки:
+// 400 или 404 повторной отправкой не исправить, они будут висеть в очереди вечно.
+func isOfflineError(_ error: Error) -> Bool {
+    guard isCancellationError(error) == false else {
+        return false
+    }
+    guard case NetworkError.transportFailed = error else {
+        return false
+    }
+    return true
+}
+
 // Отменённый запрос (например, SwiftUI сам отменил Task у .refreshable) — это не ошибка сети,
 // пользователю её показывать не нужно.
 func isCancellationError(_ error: Error) -> Bool {

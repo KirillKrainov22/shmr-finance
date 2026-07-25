@@ -12,5 +12,8 @@ enum LocalStorages {
     static let transactions: TransactionsStorage? = try? SwiftDataTransactionsStorage()
 
     static let accounts: BankAccountsStorage? = try? SwiftDataBankAccountsStorage()
-}
 
+    static let transactionsBackup: TransactionsBackupStorage? = try? SwiftDataTransactionsBackupStorage()
+
+    static let accountsBackup: BankAccountsBackupStorage? = try? SwiftDataBankAccountsBackupStorage()
+}
