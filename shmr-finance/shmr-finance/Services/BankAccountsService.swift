@@ -15,12 +15,6 @@ final class BankAccountsService {
         }
     }
 
-    // Выбранный счёт по его id.
-    func account(id: Int) async throws -> BankAccount? {
-        let dto: AccountDTO = try await client.request(path: "accounts/\(id)")
-        return dto.toDomain()
-    }
-
     @discardableResult
     func updateAccount(_ account: BankAccount) async throws -> BankAccount? {
         let dto: AccountDTO = try await client.request(
@@ -31,4 +25,3 @@ final class BankAccountsService {
         return dto.toDomain()
     }
 }
-

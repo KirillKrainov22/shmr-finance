@@ -193,7 +193,7 @@ struct AccountsView: View {
                 Circle()
                     .stroke(Color(.separator), lineWidth: 1)
                     .frame(width: 40, height: 40)
-                Text("💰")
+                Text(account.emoji)
                     .font(.system(size: 22))
             }
             Text(account.name)
@@ -230,6 +230,3 @@ struct AccountsView: View {
 #Preview {
     AccountsView()
 }
-
-
-

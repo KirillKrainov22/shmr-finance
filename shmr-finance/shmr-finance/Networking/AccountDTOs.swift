@@ -4,6 +4,7 @@ import Foundation
 struct AccountDTO: Decodable {
     let id: Int
     let name: String
+    let emoji: String
     let balance: String
     let currency: String
 
@@ -14,6 +15,7 @@ struct AccountDTO: Decodable {
         return BankAccount(
             id: id,
             name: name,
+            emoji: emoji,
             balance: balanceDecimal,
             currency: currency
         )
