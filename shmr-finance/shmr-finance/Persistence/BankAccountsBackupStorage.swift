@@ -8,6 +8,8 @@ protocol BankAccountsBackupStorage: Sendable {
     func getAll() async throws -> [BankAccount]
     func add(_ account: BankAccount) async throws
     func remove(ids: [Int]) async throws
+    // Нужен при смене движка хранения: старую базу после переноса чистим.
+    func clear() async throws
 }
 
 @Model
@@ -85,6 +87,11 @@ actor SwiftDataBankAccountsBackupStorage: BankAccountsBackupStorage {
                 modelContext.delete(existing)
             }
         }
+        try modelContext.save()
+    }
+
+    func clear() throws {
+        try modelContext.delete(model: BankAccountBackupEntity.self)
         try modelContext.save()
     }
 

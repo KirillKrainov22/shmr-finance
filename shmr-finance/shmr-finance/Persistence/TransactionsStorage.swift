@@ -9,6 +9,8 @@ protocol TransactionsStorage: Sendable {
     func update(_ transaction: Transaction) async throws
     func delete(id: Int) async throws
     func save(_ transactions: [Transaction]) async throws
+    // Нужен при смене движка хранения: старую базу после переноса чистим.
+    func clear() async throws
 }
 
 // Строка таблицы операций. Отдельный тип от доменной Transaction:
@@ -100,6 +102,11 @@ actor SwiftDataTransactionsStorage: TransactionsStorage {
         for transaction in transactions {
             try upsert(transaction)
         }
+        try modelContext.save()
+    }
+
+    func clear() throws {
+        try modelContext.delete(model: TransactionEntity.self)
         try modelContext.save()
     }
 

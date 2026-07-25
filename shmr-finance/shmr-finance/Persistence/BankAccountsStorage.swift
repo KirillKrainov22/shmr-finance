@@ -7,6 +7,8 @@ protocol BankAccountsStorage: Sendable {
     func getAll() async throws -> [BankAccount]
     func update(_ account: BankAccount) async throws
     func save(_ accounts: [BankAccount]) async throws
+    // Нужен при смене движка хранения: старую базу после переноса чистим.
+    func clear() async throws
 }
 
 @Model
@@ -70,6 +72,11 @@ actor SwiftDataBankAccountsStorage: BankAccountsStorage {
         for account in accounts {
             try upsert(account)
         }
+        try modelContext.save()
+    }
+
+    func clear() throws {
+        try modelContext.delete(model: BankAccountEntity.self)
         try modelContext.save()
     }
 

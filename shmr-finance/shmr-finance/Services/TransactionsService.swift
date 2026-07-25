@@ -41,6 +41,7 @@ final class TransactionsService {
             // В кеш кладём всё, что пришло: запрос идёт по UTC-суткам, поэтому
             // в ответ попадает и кусок соседнего дня — офлайну он пригодится.
             try? await storage?.save(transactions)
+            OfflineState.shared.markOnline()
             // А наружу отдаём ровно выбранный день, иначе в списке окажутся
             // операции соседних суток.
             return transactions.filter { transaction in
@@ -146,7 +147,13 @@ final class TransactionsService {
                 try await push(entry)
                 syncedIDs.append(entry.transaction.id)
             } catch {
-                // Не ушло — оставляем в очереди и пробуем остальные.
+                // Связи нет — остальные записи тоже не уйдут. Прекращаем,
+                // иначе каждая загрузка экрана долбится в сеть по разу
+                // на каждую запись очереди, и с ростом очереди всё медленнее.
+                if isOfflineError(error) {
+                    break
+                }
+                // А вот отказ сервера касается только этой записи — идём дальше.
                 continue
             }
         }
@@ -265,6 +272,8 @@ final class TransactionsService {
         guard cached.isEmpty == false || pending.isEmpty == false else {
             throw networkError
         }
+
+        OfflineState.shared.markOffline()
 
         var merged: [Int: Transaction] = [:]
         for transaction in cached {

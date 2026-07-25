@@ -6,6 +6,8 @@ import SwiftData
 protocol CategoriesStorage: Sendable {
     func getAll() async throws -> [Category]
     func replaceAll(with categories: [Category]) async throws
+    // Нужен при смене движка хранения: старую базу после переноса чистим.
+    func clear() async throws
 }
 
 // Строка таблицы категорий. Отдельный тип от доменной Category — по той же причине,
@@ -64,6 +66,11 @@ actor SwiftDataCategoriesStorage: CategoriesStorage {
         for category in categories {
             modelContext.insert(CategoryEntity(category: category))
         }
+        try modelContext.save()
+    }
+
+    func clear() throws {
+        try modelContext.delete(model: CategoryEntity.self)
         try modelContext.save()
     }
 }

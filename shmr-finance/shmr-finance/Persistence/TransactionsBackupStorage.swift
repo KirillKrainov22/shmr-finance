@@ -20,6 +20,8 @@ protocol TransactionsBackupStorage: Sendable {
     func getAll() async throws -> [TransactionBackupEntry]
     func add(_ transaction: Transaction, action: TransactionBackupAction) async throws
     func remove(ids: [Int]) async throws
+    // Нужен при смене движка хранения: старую базу после переноса чистим.
+    func clear() async throws
 }
 
 // Временные id для операций, созданных офлайн. Настоящий id выдаёт сервер,
@@ -158,6 +160,11 @@ actor SwiftDataTransactionsBackupStorage: TransactionsBackupStorage {
                 modelContext.delete(existing)
             }
         }
+        try modelContext.save()
+    }
+
+    func clear() throws {
+        try modelContext.delete(model: TransactionBackupEntity.self)
         try modelContext.save()
     }
 

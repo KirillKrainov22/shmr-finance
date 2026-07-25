@@ -20,6 +20,7 @@ final class BankAccountsService {
                 dto.toDomain()
             }
             try? await storage?.save(accounts)
+            OfflineState.shared.markOnline()
             return accounts
         } catch {
             let cached = (try? await storage?.getAll()) ?? []
@@ -28,6 +29,8 @@ final class BankAccountsService {
             guard cached.isEmpty == false || pending.isEmpty == false else {
                 throw error
             }
+
+            OfflineState.shared.markOffline()
 
             var merged: [Int: BankAccount] = [:]
             for account in cached {
@@ -92,15 +95,17 @@ final class BankAccountsService {
             return
         }
 
-        // Порядок важен: сначала должны уехать операции. Сервер сам пересчитает
-        // от них баланс, и наш PUT со счётом станет подтверждением той же суммы.
-        // Если счёт уйдёт первым, сервер применит операции поверх и баланс уедет дважды.
-        await TransactionsService.shared.syncBackup()
-
+        // Проверяем очередь до всего остального: если счета не ждут отправки,
+        // то и трогать очередь операций отсюда незачем.
         let pending = (try? await backup.getAll()) ?? []
         guard pending.isEmpty == false else {
             return
         }
+
+        // Порядок важен: сначала должны уехать операции. Сервер сам пересчитает
+        // от них баланс, и наш PUT со счётом станет подтверждением той же суммы.
+        // Если счёт уйдёт первым, сервер применит операции поверх и баланс уедет дважды.
+        await TransactionsService.shared.syncBackup()
 
         var syncedIDs: [Int] = []
         for account in pending {
@@ -115,7 +120,10 @@ final class BankAccountsService {
                 }
                 syncedIDs.append(account.id)
             } catch {
-                // Не ушло — оставляем в очереди и пробуем остальные.
+                // Связи нет — остальные счета тоже не уйдут.
+                if isOfflineError(error) {
+                    break
+                }
                 continue
             }
         }

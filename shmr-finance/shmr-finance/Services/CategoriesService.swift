@@ -18,12 +18,14 @@ final class CategoriesService {
             // Кеш обновляем при каждом успешном ответе. Сбой записи не должен
             // ронять запрос: данные у пользователя уже есть.
             try? await storage?.replaceAll(with: categories)
+            OfflineState.shared.markOnline()
             return categories
         } catch {
             let cached = (try? await storage?.getAll()) ?? []
             guard cached.isEmpty == false else {
                 throw error
             }
+            OfflineState.shared.markOffline()
             return cached
         }
     }
