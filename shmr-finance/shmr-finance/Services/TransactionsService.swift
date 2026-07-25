@@ -38,8 +38,14 @@ final class TransactionsService {
             let transactions = dtos.compactMap { dto in
                 dto.toDomain()
             }
+            // В кеш кладём всё, что пришло: запрос идёт по UTC-суткам, поэтому
+            // в ответ попадает и кусок соседнего дня — офлайну он пригодится.
             try? await storage?.save(transactions)
-            return transactions
+            // А наружу отдаём ровно выбранный день, иначе в списке окажутся
+            // операции соседних суток.
+            return transactions.filter { transaction in
+                isWithin(transaction, from: startDate, to: endDate)
+            }
         } catch {
             return try await cachedTransactions(from: startDate, to: endDate, networkError: error)
         }
@@ -275,8 +281,14 @@ final class TransactionsService {
         }
 
         return merged.values.filter { transaction in
-            transaction.transactionDate >= startDate && transaction.transactionDate < endDate
+            isWithin(transaction, from: startDate, to: endDate)
         }
+    }
+
+    // Границы дня приходят в локальном времени, и сравнение идёт по ним же.
+    // Один и тот же фильтр для сети и для кеша — иначе списки расходятся.
+    private func isWithin(_ transaction: Transaction, from startDate: Date, to endDate: Date) -> Bool {
+        transaction.transactionDate >= startDate && transaction.transactionDate < endDate
     }
 }
 

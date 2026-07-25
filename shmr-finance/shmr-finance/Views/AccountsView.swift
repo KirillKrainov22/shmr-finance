@@ -4,7 +4,6 @@ import SwiftUI
 struct AccountsView: View {
 
     @State private var viewModel = BankAccountsViewModel()
-    @State private var selectedDate = Date()
     @State private var showSettings = false
     @State private var showAnalytics = false
     @State private var showDatePicker = false
@@ -23,12 +22,13 @@ struct AccountsView: View {
                 // Тот же List, что и на экранах операций — тогда сепараторы,
                 // высота строк и фон совпадают один-в-один автоматически.
                 List {
-                    ForEach(Array(viewModel.accounts.enumerated()), id: \.element.id) { index, account in
+                    ForEach(Array(viewModel.displayedAccounts.enumerated()), id: \.element.id) { index, account in
                         row(for: account)
                             .listRowBackground(backgroundColor) // фон строки = фон экрана
                             .contentShape(Rectangle()) // тапабельна вся строка
                             .onTapGesture {
-                                accountToCorrect = account
+                                // Правим настоящий баланс, а не показанный за прошлую дату.
+                                accountToCorrect = viewModel.actualAccount(id: account.id)
                             }
                             // У первой строки List сам не рисует верхний сепаратор — включаем.
                             .listRowSeparator(index == 0 ? .visible : .automatic, edges: .top)
@@ -76,7 +76,8 @@ struct AccountsView: View {
             .sheet(isPresented: $showAddAccount) {
                 Text("Добавление счёта (заглушка)")
             }
-            .task {
+            // Грузит при появлении и заново при каждой смене даты.
+            .task(id: viewModel.selectedDate) {
                 await viewModel.load()
             }
             .onShake {
@@ -109,7 +110,7 @@ struct AccountsView: View {
             HStack(spacing: 4) {
                 Image(systemName: "calendar")
                 Text(
-                    selectedDate,
+                    viewModel.selectedDate,
                     format: .dateTime.day().month(.wide)
                 )
             }
@@ -133,10 +134,12 @@ struct AccountsView: View {
     }
 
     private var datePickerSheet: some View {
-        NavigationStack {
+        @Bindable var viewModel = viewModel
+
+        return NavigationStack {
             DatePicker(
                 "Дата",
-                selection: $selectedDate,
+                selection: $viewModel.selectedDate,
                 displayedComponents: .date
             )
             .datePickerStyle(.graphical)
@@ -230,3 +233,7 @@ struct AccountsView: View {
 #Preview {
     AccountsView()
 }
+
+
+
+
