@@ -45,4 +45,4 @@ xcuserdata
 /*.gcno
 **/xcshareddata/WorkspaceSettings.xcsettings
 .DS_Store
-Secrets.swift
+Config.xcconfig
