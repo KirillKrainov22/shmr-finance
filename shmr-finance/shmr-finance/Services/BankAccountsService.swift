@@ -1,17 +1,28 @@
 import Foundation
 
-// Сервис банковских счетов: данные с бэкенда через NetworkClient.
+// Сервис банковских счетов: данные с бэкенда через NetworkClient, копия — в локальном хранилище.
 final class BankAccountsService {
 
     // Общий экземпляр на всё приложение.
     static let shared = BankAccountsService()
 
     private let client = NetworkClient.shared
+    private let storage = LocalStorages.accounts
 
     func bankAccounts() async throws -> [BankAccount] {
-        let dtos: [AccountDTO] = try await client.request(path: "accounts")
-        return dtos.compactMap { dto in
-            dto.toDomain()
+        do {
+            let dtos: [AccountDTO] = try await client.request(path: "accounts")
+            let accounts = dtos.compactMap { dto in
+                dto.toDomain()
+            }
+            try? await storage?.save(accounts)
+            return accounts
+        } catch {
+            let cached = (try? await storage?.getAll()) ?? []
+            guard cached.isEmpty == false else {
+                throw error
+            }
+            return cached
         }
     }
 
@@ -22,6 +33,11 @@ final class BankAccountsService {
             method: "PUT",
             body: AccountUpdateRequestDTO(account: account)
         )
-        return dto.toDomain()
+        let updated = dto.toDomain()
+        if let updated {
+            try? await storage?.update(updated)
+        }
+        return updated
     }
 }
+

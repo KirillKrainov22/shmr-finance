@@ -8,4 +8,9 @@ enum LocalStorages {
     // nil, если базу не удалось открыть (нет места, битый файл).
     // Тогда приложение работает без кеша, но не падает.
     static let categories: CategoriesStorage? = try? SwiftDataCategoriesStorage()
+
+    static let transactions: TransactionsStorage? = try? SwiftDataTransactionsStorage()
+
+    static let accounts: BankAccountsStorage? = try? SwiftDataBankAccountsStorage()
 }
+
