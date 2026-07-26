@@ -65,7 +65,7 @@ struct BalanceCorrectionView: View {
                     }
                 Text(currencySymbol)
             }
-            .font(.system(size: 32, weight: .bold, design: .rounded))
+            .scaledFont(size: 32, weight: .bold, design: .rounded)
 
             Rectangle()
                 .fill(Color(.separator))

@@ -81,14 +81,14 @@ struct CategoriesView: View {
             ZStack {
                 Circle()
                     .stroke(Color(.separator), lineWidth: 1)
-                    .frame(width: 40, height: 40)
+                    .scaledSquare(40)
                 Text(String(category.emoji))
-                    .font(.system(size: 22))
+                    .scaledFont(size: 22)
             }
             // Эмодзи — украшение, его название только зашумит озвучку.
             .accessibilityHidden(true)
             Text(category.name)
-                .font(.system(size: 16, weight: .medium))
+                .scaledFont(size: 16, weight: .medium)
         }
         .accessibilityElement(children: .combine)
     }

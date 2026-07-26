@@ -112,7 +112,7 @@ struct AccountsView: View {
             }
         }
         .padding(.horizontal, 12)
-        .frame(height: 64)
+        .frame(minHeight: 64)
     }
 
     private var dateChip: some View {
@@ -126,7 +126,7 @@ struct AccountsView: View {
                     format: .dateTime.day().month(.wide)
                 )
             }
-            .font(.system(size: 15, weight: .medium))
+            .scaledFont(size: 15, weight: .medium)
             .foregroundStyle(.primary)
             .padding(.horizontal, 12)
             .padding(.vertical, 8)
@@ -144,7 +144,7 @@ struct AccountsView: View {
         Button(action: action) {
             Image(systemName: systemName)
                 .foregroundStyle(.primary)
-                .frame(width: 40, height: 40)
+                .scaledSquare(40)
         }
         .buttonStyle(.plain)
         .glassCapsule()
@@ -178,7 +178,7 @@ struct AccountsView: View {
     private var balanceHeader: some View {
         VStack(alignment: .leading, spacing: 4) {
             Text("баланс")
-                .font(.system(size: 14, weight: .medium))
+                .scaledFont(size: 14, weight: .medium)
                 .foregroundStyle(.secondary)
             balanceValue
         }
@@ -213,7 +213,7 @@ struct AccountsView: View {
         )
 
         return Text(balanceString)
-            .font(.system(size: 34, weight: .bold, design: .rounded))
+            .scaledFont(size: 34, weight: .bold, design: .rounded)
             // Разряды перематываются при смене даты, а не подменяются рывком.
             .contentTransition(.numericText())
             .animation(.default, value: viewModel.totalBalance)
@@ -233,17 +233,17 @@ struct AccountsView: View {
             ZStack {
                 Circle()
                     .stroke(Color(.separator), lineWidth: 1)
-                    .frame(width: 40, height: 40)
+                    .scaledSquare(40)
                 Text(account.emoji)
-                    .font(.system(size: 22))
+                    .scaledFont(size: 22)
             }
             // Эмодзи — украшение, его название только зашумит озвучку.
             .accessibilityHidden(true)
             Text(account.name)
-                .font(.system(size: 16, weight: .medium))
+                .scaledFont(size: 16, weight: .medium)
             Spacer()
             Text(account.balance, format: currencyFormat)
-                .font(.system(size: 14, weight: .medium))
+                .scaledFont(size: 14, weight: .medium)
         }
         .padding(.vertical, 3)
         // Без этого строка читается тремя отдельными остановками вместо одной фразы.
@@ -258,7 +258,7 @@ struct AccountsView: View {
             Image(systemName: "plus")
                 .font(.title2.weight(.semibold))
                 .foregroundStyle(.white)
-                .frame(width: 56, height: 56)
+                .scaledSquare(56)
                 .background(Circle().fill(Color.accentColor))
         }
         .padding(16)

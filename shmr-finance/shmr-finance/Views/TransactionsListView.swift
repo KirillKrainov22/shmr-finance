@@ -99,7 +99,7 @@ struct TransactionsListView: View {
             }
         }
         .padding(.horizontal, 12)
-        .frame(height: 64)
+        .frame(minHeight: 64)
     }
 
     private var sortMenu: some View {
@@ -113,7 +113,7 @@ struct TransactionsListView: View {
             }
         } label: {
             Image(systemName: "arrow.up.arrow.down")
-                .frame(width: 40, height: 40)
+                .scaledSquare(40)
                 // Значок отзывается на смену порядка — единственное место,
                 // где анимация успевает быть замеченной: экран остаётся на месте.
                 .symbolEffect(.bounce, value: viewModel.sortOption)
@@ -135,7 +135,7 @@ struct TransactionsListView: View {
                     format: .dateTime.day().month(.wide)
                 )
             }
-            .font(.system(size: 15, weight: .medium))
+            .scaledFont(size: 15, weight: .medium)
             .foregroundStyle(.primary)
             .padding(.horizontal, 12)
             .padding(.vertical, 8)
@@ -153,7 +153,7 @@ struct TransactionsListView: View {
         Button(action: action) {
             Image(systemName: systemName)
                 .foregroundStyle(.primary)
-                .frame(width: 40, height: 40)
+                .scaledSquare(40)
         }
         .buttonStyle(.plain)
         .glassCapsule()
@@ -186,7 +186,7 @@ struct TransactionsListView: View {
     private var header: some View {
         VStack(alignment: .leading, spacing: 4) {
             Text(totalLabel)
-                .font(.system(size: 14, weight: .medium))
+                .scaledFont(size: 14, weight: .medium)
                 .foregroundStyle(.secondary)
             Text(viewModel.total, format: currencyFormat)
                 .font(.largeTitle.bold())
@@ -208,19 +208,19 @@ struct TransactionsListView: View {
                 ZStack {
                     Circle()
                         .stroke(Color(.separator), lineWidth: 1)
-                        .frame(width: 40, height: 40)
+                        .scaledSquare(40)
                     Text(String(category.emoji))
-                        .font(.system(size: 22))
+                        .scaledFont(size: 22)
                 }
                 // Эмодзи — украшение. Иначе VoiceOver прочитает его название
                 // («автомобиль») перед названием категории.
                 .accessibilityHidden(true)
                 Text(category.name)
-                    .font(.system(size: 16, weight: .medium))
+                    .scaledFont(size: 16, weight: .medium)
             }
             Spacer()
             Text(transaction.amount, format: currencyFormat)
-                .font(.system(size: 14, weight: .medium))
+                .scaledFont(size: 14, weight: .medium)
         }
         .padding(.vertical, 3)
         // Без этого строка читается тремя отдельными остановками вместо одной фразы.
@@ -235,7 +235,7 @@ struct TransactionsListView: View {
             Image(systemName: "plus")
                 .font(.title2.weight(.semibold))
                 .foregroundStyle(.white)
-                .frame(width: 56, height: 56)
+                .scaledSquare(56)
                 .background(Circle().fill(Color.accentColor))
         }
         .padding(16)
