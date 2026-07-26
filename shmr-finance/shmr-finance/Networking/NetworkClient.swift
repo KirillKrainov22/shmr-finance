@@ -99,6 +99,12 @@ final class NetworkClient {
 
     // Одна попытка: отправляет запрос и проверяет HTTP-код.
     private func send(_ request: URLRequest) async throws -> Data {
+        // Связи нет — не занимаем время ожиданием таймаута. Ошибка та же,
+        // что вернул бы URLSession, поэтому вся логика выше работает как прежде.
+        guard NetworkMonitor.shared.isConnected else {
+            throw NetworkError.transportFailed(URLError(.notConnectedToInternet))
+        }
+
         let data: Data
         let response: URLResponse
         do {
