@@ -55,6 +55,7 @@ struct TransactionsListView: View {
             } message: {
                 Text(viewModel.errorMessage)
             }
+            .errorFeedback(when: viewModel.showError)
             .navigationDestination(isPresented: $showAnalytics) {
                 AnalyticsView()
             }

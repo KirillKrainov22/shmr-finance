@@ -3,11 +3,19 @@ import SwiftUI
 // Корневой экран приложения — таб-бар с тремя вкладками.
 struct MainTabView: View {
 
+    private enum Tab {
+        case expenses
+        case income
+        case accounts
+    }
+
     private let offlineState = OfflineState.shared
 
     // Пока данные не перенесены между хранилищами, показывать экраны нельзя:
     // они успели бы прочитать старое.
     @State private var isStorageReady = false
+
+    @State private var selectedTab = Tab.expenses
 
     var body: some View {
         Group {
@@ -29,17 +37,22 @@ struct MainTabView: View {
     }
 
     private var tabs: some View {
-        TabView {
+        TabView(selection: $selectedTab) {
             TransactionsListView(direction: .outcome)
+                .tag(Tab.expenses)
                 .tabItem {
                     Label("Расходы", systemImage: "arrow.down.circle").environment(\.symbolVariants, .none)
                 }
 
             TransactionsListView(direction: .income)
+                .tag(Tab.income)
                 .tabItem {
                     Label("Доходы", systemImage: "arrow.up.circle").environment(\.symbolVariants, .none)
                 }
-            AccountsView()
+            // Экрану счетов нужно знать, открыт ли он: тряска ловится глобально,
+            // и без этого баланс скрывался бы с любой вкладки.
+            AccountsView(isVisible: selectedTab == .accounts)
+                .tag(Tab.accounts)
                 .tabItem {
                     Label("Счета", systemImage: "wallet.bifold").environment(\.symbolVariants, .none)
                 }

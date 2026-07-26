@@ -3,6 +3,11 @@ import SwiftUI
 // Экран «Счета»: общий баланс и список счетов. Тот же shell, что и экран операций.
 struct AccountsView: View {
 
+    // Открыт ли этот экран сейчас. Вкладки TabView живут все одновременно,
+    // поэтому экран продолжает слушать тряску, даже когда его не видно, —
+    // без этого флага баланс скрывался бы с любой вкладки.
+    var isVisible = true
+
     @State private var viewModel = BankAccountsViewModel()
     @State private var showSettings = false
     @State private var showAnalytics = false
@@ -57,6 +62,10 @@ struct AccountsView: View {
             } message: {
                 Text(viewModel.errorMessage)
             }
+            .errorFeedback(when: viewModel.showError)
+            // Баланс прячется мягкой анимацией, поэтому и отдача мягкая по характеру,
+            // но в полную силу — иначе на тряске её почти не чувствуешь.
+            .sensoryFeedback(.impact(flexibility: .soft, intensity: 1), trigger: isBalanceHidden)
             .navigationDestination(isPresented: $showAnalytics) {
                 AnalyticsView()
             }
@@ -81,6 +90,9 @@ struct AccountsView: View {
                 await viewModel.load()
             }
             .onShake {
+                guard isVisible else {
+                    return
+                }
                 isBalanceHidden.toggle()
             }
         }

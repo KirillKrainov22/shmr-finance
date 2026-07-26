@@ -65,6 +65,7 @@ struct CategoriesView: View {
             } message: {
                 Text(viewModel.errorMessage)
             }
+            .errorFeedback(when: viewModel.showError)
             .task {
                 await viewModel.load()
             }

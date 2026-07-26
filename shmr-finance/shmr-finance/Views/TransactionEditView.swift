@@ -12,6 +12,11 @@ struct TransactionEditView: View {
     @State private var detent: PresentationDetent = .medium
     @State private var showValidationAlert = false
 
+    // Счётчики-триггеры для тактильной отдачи: sensoryFeedback реагирует
+    // на изменение значения, а не на сам факт вызова.
+    @State private var savedCount = 0
+    @State private var deletedCount = 0
+
     // Колбэк, чтобы список обновился после сохранения/удаления.
     private let onFinish: () -> Void
 
@@ -91,6 +96,7 @@ struct TransactionEditView: View {
                         Task {
                             // Закрываем форму только если удаление прошло успешно.
                             if await viewModel.delete() {
+                                deletedCount += 1
                                 onFinish()
                                 dismiss()
                             }
@@ -141,6 +147,15 @@ struct TransactionEditView: View {
             } message: {
                 Text(viewModel.errorMessage)
             }
+            // Операция сохранена — системный «успех».
+            .sensoryFeedback(.success, trigger: savedCount)
+            // Удаление — не успех, а исчезновение объекта, поэтому обычный удар.
+            .sensoryFeedback(.impact(weight: .medium, intensity: 1), trigger: deletedCount)
+            // Незаполненные поля — предупреждение, а не отказ: данные никуда не ушли.
+            .sensoryFeedback(trigger: showValidationAlert) { _, isShowing in
+                isShowing ? .warning : nil
+            }
+            .errorFeedback(when: viewModel.showError)
             .overlay {
                 if viewModel.isLoading {
                     ProgressView()
@@ -275,6 +290,7 @@ struct TransactionEditView: View {
         Task {
             // Закрываем форму только если сохранение прошло успешно.
             if await viewModel.save() {
+                savedCount += 1
                 onFinish()
                 dismiss()
             }
