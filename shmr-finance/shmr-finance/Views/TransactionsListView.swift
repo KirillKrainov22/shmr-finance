@@ -90,10 +90,10 @@ struct TransactionsListView: View {
             Spacer()
             HStack(spacing: 8) {
                 sortMenu
-                circleButton(systemName: "chart.pie") {
+                circleButton(systemName: "chart.pie", label: "Аналитика") {
                     showAnalytics = true
                 }
-                circleButton(systemName: "slider.horizontal.3") {
+                circleButton(systemName: "slider.horizontal.3", label: "Настройки") {
                     showSettings = true
                 }
             }
@@ -114,9 +114,14 @@ struct TransactionsListView: View {
         } label: {
             Image(systemName: "arrow.up.arrow.down")
                 .frame(width: 40, height: 40)
+                // Значок отзывается на смену порядка — единственное место,
+                // где анимация успевает быть замеченной: экран остаётся на месте.
+                .symbolEffect(.bounce, value: viewModel.sortOption)
         }
         .tint(.primary) // Menu красит значок акцентным — форсируем чёрный
         .glassCapsule()
+        .accessibilityLabel("Сортировка")
+        .accessibilityValue(viewModel.sortOption.rawValue)
     }
 
     private var dateChip: some View {
@@ -137,9 +142,14 @@ struct TransactionsListView: View {
         }
         .buttonStyle(.plain) // без .plain кнопка красит содержимое акцентным цветом
         .glassCapsule()
+        .accessibilityLabel("Выбрать дату")
     }
 
-    private func circleButton(systemName: String, action: @escaping () -> Void) -> some View {
+    private func circleButton(
+        systemName: String,
+        label: String,
+        action: @escaping () -> Void
+    ) -> some View {
         Button(action: action) {
             Image(systemName: systemName)
                 .foregroundStyle(.primary)
@@ -147,6 +157,8 @@ struct TransactionsListView: View {
         }
         .buttonStyle(.plain)
         .glassCapsule()
+        // Кнопка без текста — без подписи VoiceOver прочитает служебное имя значка.
+        .accessibilityLabel(label)
     }
 
     private var datePickerSheet: some View {
@@ -178,11 +190,16 @@ struct TransactionsListView: View {
                 .foregroundStyle(.secondary)
             Text(viewModel.total, format: currencyFormat)
                 .font(.largeTitle.bold())
+                // Разряды перематываются при смене дня, а не подменяются рывком.
+                .contentTransition(.numericText())
+                .animation(.default, value: viewModel.total)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(.horizontal, 20)
         .padding(.top, 12)
         .padding(.bottom, 32)
+        // Заголовок и сумма — одна фраза, а не две остановки подряд.
+        .accessibilityElement(children: .combine)
     }
 
     private func row(for transaction: Transaction) -> some View {
@@ -195,6 +212,9 @@ struct TransactionsListView: View {
                     Text(String(category.emoji))
                         .font(.system(size: 22))
                 }
+                // Эмодзи — украшение. Иначе VoiceOver прочитает его название
+                // («автомобиль») перед названием категории.
+                .accessibilityHidden(true)
                 Text(category.name)
                     .font(.system(size: 16, weight: .medium))
             }
@@ -203,6 +223,9 @@ struct TransactionsListView: View {
                 .font(.system(size: 14, weight: .medium))
         }
         .padding(.vertical, 3)
+        // Без этого строка читается тремя отдельными остановками вместо одной фразы.
+        .accessibilityElement(children: .combine)
+        .accessibilityHint("Дважды коснитесь, чтобы изменить")
     }
 
     private var addButton: some View {
@@ -216,6 +239,7 @@ struct TransactionsListView: View {
                 .background(Circle().fill(Color.accentColor))
         }
         .padding(16)
+        .accessibilityLabel("Добавить операцию")
     }
 
     private var totalLabel: String {

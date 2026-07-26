@@ -25,6 +25,8 @@ struct AccountPickerView: View {
                     onSelect(account)
                     dismiss()
                 }
+                .accessibilityElement(children: .combine)
+                .accessibilityHint("Дважды коснитесь, чтобы выбрать")
             }
             .listStyle(.plain)
             .navigationTitle("Счёт")
@@ -42,6 +44,7 @@ struct AccountPickerView: View {
                             .glassCapsule()
                     }
                     .buttonStyle(.plain)
+                    .accessibilityLabel("Закрыть")
                 }
             }
             .task {

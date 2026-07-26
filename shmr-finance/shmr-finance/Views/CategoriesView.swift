@@ -47,6 +47,7 @@ struct CategoriesView: View {
                             .glassCapsule()
                     }
                     .buttonStyle(.plain)
+                    .accessibilityLabel("Закрыть")
                 }
                 // iOS 26: нативный поиск в нижнем баре, прижат вправо, минимизируется в иконку.
                 if #available(iOS 26, *) {
@@ -84,9 +85,12 @@ struct CategoriesView: View {
                 Text(String(category.emoji))
                     .font(.system(size: 22))
             }
+            // Эмодзи — украшение, его название только зашумит озвучку.
+            .accessibilityHidden(true)
             Text(category.name)
                 .font(.system(size: 16, weight: .medium))
         }
+        .accessibilityElement(children: .combine)
     }
 }
 

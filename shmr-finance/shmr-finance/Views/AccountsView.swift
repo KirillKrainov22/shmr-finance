@@ -103,10 +103,10 @@ struct AccountsView: View {
             dateChip
             Spacer()
             HStack(spacing: 8) {
-                circleButton(systemName: "chart.pie") {
+                circleButton(systemName: "chart.pie", label: "Аналитика") {
                     showAnalytics = true
                 }
-                circleButton(systemName: "slider.horizontal.3") {
+                circleButton(systemName: "slider.horizontal.3", label: "Настройки") {
                     showSettings = true
                 }
             }
@@ -133,9 +133,14 @@ struct AccountsView: View {
         }
         .buttonStyle(.plain)
         .glassCapsule()
+        .accessibilityLabel("Выбрать дату")
     }
 
-    private func circleButton(systemName: String, action: @escaping () -> Void) -> some View {
+    private func circleButton(
+        systemName: String,
+        label: String,
+        action: @escaping () -> Void
+    ) -> some View {
         Button(action: action) {
             Image(systemName: systemName)
                 .foregroundStyle(.primary)
@@ -143,6 +148,8 @@ struct AccountsView: View {
         }
         .buttonStyle(.plain)
         .glassCapsule()
+        // Кнопка без текста — без подписи VoiceOver прочитает служебное имя значка.
+        .accessibilityLabel(label)
     }
 
     private var datePickerSheet: some View {
@@ -179,6 +186,22 @@ struct AccountsView: View {
         .padding(.horizontal, 20)
         .padding(.top, 12)
         .padding(.bottom, 32)
+        // Прозрачность прячет баланс только от глаз: VoiceOver прочитал бы его
+        // вслух даже скрытым, и смысл функции ломался бы наоборот.
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(balanceAccessibilityLabel)
+    }
+
+    private var balanceAccessibilityLabel: String {
+        guard isBalanceHidden == false else {
+            return "Баланс скрыт. Потрясите устройство, чтобы показать"
+        }
+        let amount = viewModel.totalBalance.formatted(
+            .currency(code: viewModel.currencyCode)
+                .precision(.fractionLength(0...2))
+                .locale(Locale(identifier: "ru_RU"))
+        )
+        return "Баланс \(amount)"
     }
 
     // Сумма или спойлер поверх неё, если баланс скрыт (по тряске).
@@ -191,6 +214,9 @@ struct AccountsView: View {
 
         return Text(balanceString)
             .font(.system(size: 34, weight: .bold, design: .rounded))
+            // Разряды перематываются при смене даты, а не подменяются рывком.
+            .contentTransition(.numericText())
+            .animation(.default, value: viewModel.totalBalance)
             .opacity(isBalanceHidden ? 0 : 1)
             .overlay {
                 if isBalanceHidden {
@@ -211,6 +237,8 @@ struct AccountsView: View {
                 Text(account.emoji)
                     .font(.system(size: 22))
             }
+            // Эмодзи — украшение, его название только зашумит озвучку.
+            .accessibilityHidden(true)
             Text(account.name)
                 .font(.system(size: 16, weight: .medium))
             Spacer()
@@ -218,6 +246,9 @@ struct AccountsView: View {
                 .font(.system(size: 14, weight: .medium))
         }
         .padding(.vertical, 3)
+        // Без этого строка читается тремя отдельными остановками вместо одной фразы.
+        .accessibilityElement(children: .combine)
+        .accessibilityHint("Дважды коснитесь, чтобы изменить баланс")
     }
 
     private var addButton: some View {
@@ -231,6 +262,7 @@ struct AccountsView: View {
                 .background(Circle().fill(Color.accentColor))
         }
         .padding(16)
+        .accessibilityLabel("Добавить счёт")
     }
 
     private var currencyFormat: Decimal.FormatStyle.Currency {

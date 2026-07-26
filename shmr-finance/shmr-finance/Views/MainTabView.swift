@@ -71,6 +71,8 @@ struct MainTabView: View {
     private var offlineBanner: some View {
         HStack(spacing: 6) {
             Image(systemName: "wifi.slash")
+                // Пульсация показывает, что состояние живое, а не застрявшая картинка.
+                .symbolEffect(.pulse, options: .repeating, value: offlineState.isOffline)
             Text("Offline mode")
         }
         .font(.caption.weight(.medium))
@@ -80,6 +82,8 @@ struct MainTabView: View {
         .glassCapsule()
         .padding(.bottom, 55) // над таб-баром
         .transition(.move(edge: .bottom).combined(with: .opacity))
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("Офлайн-режим. Показаны сохранённые данные")
     }
 }
 

@@ -117,12 +117,22 @@ struct TransactionEditView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    circleToolbarButton(systemName: "xmark", foreground: .primary, background: Color(.systemGray5)) {
+                    circleToolbarButton(
+                        systemName: "xmark",
+                        label: "Закрыть",
+                        foreground: .primary,
+                        background: Color(.systemGray5)
+                    ) {
                         dismiss()
                     }
                 }
                 ToolbarItem(placement: .confirmationAction) {
-                    circleToolbarButton(systemName: "checkmark", foreground: .white, background: .accentColor) {
+                    circleToolbarButton(
+                        systemName: "checkmark",
+                        label: "Сохранить",
+                        foreground: .white,
+                        background: .accentColor
+                    ) {
                         confirm()
                     }
                 }
@@ -221,6 +231,7 @@ struct TransactionEditView: View {
 
     private func circleToolbarButton(
         systemName: String,
+        label: String,
         foreground: Color,
         background: Color,
         action: @escaping () -> Void
@@ -233,6 +244,8 @@ struct TransactionEditView: View {
                 .background(Circle().fill(background))
         }
         .buttonStyle(.plain)
+        // Кнопка без текста — без подписи VoiceOver прочитает служебное имя значка.
+        .accessibilityLabel(label)
     }
 
     private var title: String {
