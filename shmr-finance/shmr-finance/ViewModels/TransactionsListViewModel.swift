@@ -38,6 +38,18 @@ final class TransactionsListViewModel {
     private let transactionsService = TransactionsService.shared
     private let categoriesService = CategoriesService.shared
 
+    // Что-то из этого поменялось — список надо перечитать.
+    // Счёт входит сюда наравне с датой: он тоже меняет содержимое экрана,
+    // а меняют его на другой вкладке.
+    struct ReloadKey: Equatable {
+        let date: Date
+        let accountId: Int?
+    }
+
+    var reloadKey: ReloadKey {
+        ReloadKey(date: selectedDate, accountId: SelectedAccountStore.shared.id)
+    }
+
     init(direction: Direction) {
         self.direction = direction
     }

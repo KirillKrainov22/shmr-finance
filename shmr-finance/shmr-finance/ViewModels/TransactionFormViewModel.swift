@@ -78,14 +78,15 @@ final class TransactionFormViewModel {
         }
 
         do {
-            let accounts = try await BankAccountsService.shared.bankAccounts()
             let categories = try await CategoriesService.shared.categories()
 
             switch mode {
             case .create:
-                // По умолчанию — первый счёт пользователя.
-                account = accounts.first
+                // По умолчанию — выбранный счёт. Если пользователь ещё ничего
+                // не выбирал, сервис сам подставит первый и запомнит его.
+                account = try await BankAccountsService.shared.selectedAccount()
             case .edit(let transaction):
+                let accounts = try await BankAccountsService.shared.bankAccounts()
                 category = categories.first { $0.id == transaction.categoryId }
                 account = accounts.first { $0.id == transaction.accountId }
             }
@@ -132,6 +133,11 @@ final class TransactionFormViewModel {
                     updatedAt: now
                 )
                 try await transactionsService.createTransaction(transaction)
+                // Счёт, на который только что записали операцию, становится выбранным.
+                // Иначе новая операция ушла бы в список другого счёта и пропала с глаз.
+                // При редактировании так не делаем: правка старой операции не повод
+                // переключать весь интерфейс.
+                BankAccountsService.shared.selectAccount(id: account.id)
             case .edit(let original):
                 let updated = Transaction(
                     id: original.id,

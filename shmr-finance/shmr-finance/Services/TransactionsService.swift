@@ -11,18 +11,30 @@ final class TransactionsService {
     private let storage = LocalStorages.transactions
     private let backup = LocalStorages.transactionsBackup
 
-    // Операции за период. Эндпоинт привязан к счёту,
-    // поэтому берём основной (первый) счёт пользователя.
+    // Операции за период. Эндпоинт привязан к счёту, поэтому работаем
+    // с выбранным счётом пользователя.
     func transactions(from startDate: Date, to endDate: Date) async throws -> [Transaction] {
         // По ТЗ: перед походом в сеть пытаемся отдать серверу то, что накопилось офлайн.
         await syncBackup()
 
-        do {
-            let accounts = try await BankAccountsService.shared.bankAccounts()
-            guard let account = accounts.first else {
-                return []
-            }
+        // Счёт определяем один раз — до развилки «сеть или кеш». Раньше он брался
+        // только в онлайн-ветке, и офлайн отдавал операции всех счетов сразу.
+        guard let account = try await BankAccountsService.shared.selectedAccount() else {
+            return []
+        }
 
+        return try await fetch(from: startDate, to: endDate, accountId: account.id)
+    }
+
+    // Операции конкретного счёта. Нужны экрану счетов: он считает баланс
+    // на прошлую дату по каждому счёту отдельно, а не только по выбранному.
+    func transactions(from startDate: Date, to endDate: Date, accountId: Int) async throws -> [Transaction] {
+        await syncBackup()
+        return try await fetch(from: startDate, to: endDate, accountId: accountId)
+    }
+
+    private func fetch(from startDate: Date, to endDate: Date, accountId: Int) async throws -> [Transaction] {
+        do {
             // endDate у нас — начало следующего дня; вычитаем секунду,
             // чтобы в "yyyy-MM-dd" не уехать на день вперёд.
             let inclusiveEnd = endDate.addingTimeInterval(-1)
@@ -32,7 +44,7 @@ final class TransactionsService {
             ]
 
             let dtos: [TransactionResponseDTO] = try await client.request(
-                path: "transactions/account/\(account.id)/period",
+                path: "transactions/account/\(accountId)/period",
                 queryItems: queryItems
             )
             let transactions = dtos.compactMap { dto in
@@ -48,7 +60,12 @@ final class TransactionsService {
                 isWithin(transaction, from: startDate, to: endDate)
             }
         } catch {
-            return try await cachedTransactions(from: startDate, to: endDate, networkError: error)
+            return try await cachedTransactions(
+                from: startDate,
+                to: endDate,
+                accountId: accountId,
+                networkError: error
+            )
         }
     }
 
@@ -261,6 +278,7 @@ final class TransactionsService {
     private func cachedTransactions(
         from startDate: Date,
         to endDate: Date,
+        accountId: Int,
         networkError: Error
     ) async throws -> [Transaction] {
         let cached = (try? await storage?.getAll()) ?? []
@@ -289,8 +307,12 @@ final class TransactionsService {
             }
         }
 
+        // В кеше лежат операции всех счетов, по которым мы когда-либо ходили в сеть,
+        // а сервер отдал бы только выбранный. Без этого фильтра офлайн-список
+        // оказывался шире онлайнового.
         return merged.values.filter { transaction in
-            isWithin(transaction, from: startDate, to: endDate)
+            transaction.accountId == accountId
+                && isWithin(transaction, from: startDate, to: endDate)
         }
     }
 

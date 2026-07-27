@@ -39,9 +39,26 @@ final class BankAccountsViewModel {
         }
     }
 
-    // Валюта приложения (пока берём с первого счёта).
+    // Валюта приложения — по выбранному счёту.
     var currencyCode: String {
-        accounts.first?.currency ?? "RUB"
+        selectedAccount?.currency ?? accounts.first?.currency ?? "RUB"
+    }
+
+    // Какой счёт сейчас основной. Значение живёт в общем хранилище,
+    // поэтому галочка на экране обновляется сама.
+    var selectedAccountId: Int? {
+        SelectedAccountStore.shared.id
+    }
+
+    private var selectedAccount: BankAccount? {
+        service.selectedAccount(among: accounts)
+    }
+
+    // Пользователь выбрал другой основной счёт. Списки операций перечитаются
+    // сами, а здесь пересчитываем баланс на выбранную дату.
+    func select(account: BankAccount) async {
+        service.selectAccount(id: account.id)
+        await loadRollback()
     }
 
     // Корректировать нужно настоящий баланс, а не показанный за прошлую дату.
@@ -59,6 +76,9 @@ final class BankAccountsViewModel {
 
         do {
             accounts = try await service.bankAccounts()
+            // Если выбора ещё не было, он тут же и делается — иначе на первом
+            // запуске галочка не появилась бы ни на одном счёте.
+            service.selectedAccount(among: accounts)
             await loadRollback()
         } catch {
             guard isCancellationError(error) == false else {
@@ -81,6 +101,9 @@ final class BankAccountsViewModel {
             updated.balance = newBalance
             _ = try await service.updateAccount(updated)
             accounts = try await service.bankAccounts()
+            // Если выбора ещё не было, он тут же и делается — иначе на первом
+            // запуске галочка не появилась бы ни на одном счёте.
+            service.selectedAccount(among: accounts)
             await loadRollback()
         } catch {
             guard isCancellationError(error) == false else {
@@ -95,8 +118,6 @@ final class BankAccountsViewModel {
     // Поэтому баланс на прошлую дату считаем сами: берём текущий и вычитаем
     // всё, что произошло после конца выбранного дня.
     private func loadRollback() async {
-        rollback = [:]
-
         let calendar = Calendar.current
         let endOfSelectedDay = calendar.date(
             byAdding: .day,
@@ -114,14 +135,7 @@ final class BankAccountsViewModel {
             let endOfToday,
             endOfSelectedDay < endOfToday // выбран сегодняшний день или будущее — отматывать нечего
         else {
-            return
-        }
-
-        let later = (try? await transactionsService.transactions(
-            from: endOfSelectedDay,
-            to: endOfToday
-        )) ?? []
-        guard later.isEmpty == false else {
+            rollback = [:]
             return
         }
 
@@ -132,12 +146,30 @@ final class BankAccountsViewModel {
             directionsById[category.id] = category.direction
         }
 
-        for transaction in later {
-            guard let direction = directionsById[transaction.categoryId] else {
-                continue
+        // Копим в отдельном словаре и присваиваем один раз в конце. Если писать
+        // сразу в rollback, экран успеет показать сегодняшние суммы, пока идут
+        // запросы, и цифры перемотаются дважды: сначала вверх, потом обратно.
+        var computed: [Int: Decimal] = [:]
+
+        // Эндпоинт операций привязан к счёту, поэтому спрашиваем по каждому.
+        // Раньше брали только выбранный, и у остальных счетов баланс
+        // за прошлую дату показывался как сегодняшний.
+        for account in accounts {
+            let later = (try? await transactionsService.transactions(
+                from: endOfSelectedDay,
+                to: endOfToday,
+                accountId: account.id
+            )) ?? []
+
+            for transaction in later {
+                guard let direction = directionsById[transaction.categoryId] else {
+                    continue
+                }
+                let signed = direction.isIncome ? transaction.amount : -transaction.amount
+                computed[account.id, default: 0] += signed
             }
-            let signed = direction.isIncome ? transaction.amount : -transaction.amount
-            rollback[transaction.accountId, default: 0] += signed
         }
+
+        rollback = computed
     }
 }

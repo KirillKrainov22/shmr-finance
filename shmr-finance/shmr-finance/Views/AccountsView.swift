@@ -28,15 +28,20 @@ struct AccountsView: View {
                 // высота строк и фон совпадают один-в-один автоматически.
                 List {
                     ForEach(Array(viewModel.displayedAccounts.enumerated()), id: \.element.id) { index, account in
-                        row(for: account)
-                            .listRowBackground(backgroundColor) // фон строки = фон экрана
-                            .contentShape(Rectangle()) // тапабельна вся строка
-                            .onTapGesture {
-                                // Правим настоящий баланс, а не показанный за прошлую дату.
-                                accountToCorrect = viewModel.actualAccount(id: account.id)
-                            }
-                            // У первой строки List сам не рисует верхний сепаратор — включаем.
-                            .listRowSeparator(index == 0 ? .visible : .automatic, edges: .top)
+                        // Галочка вынесена из тапабельной области строки:
+                        // тап по строке уже занят корректировкой баланса.
+                        HStack(spacing: 12) {
+                            row(for: account)
+                                .contentShape(Rectangle()) // тапабельна вся строка
+                                .onTapGesture {
+                                    // Правим настоящий баланс, а не показанный за прошлую дату.
+                                    accountToCorrect = viewModel.actualAccount(id: account.id)
+                                }
+                            selectionMark(for: account)
+                        }
+                        .listRowBackground(backgroundColor) // фон строки = фон экрана
+                        // У первой строки List сам не рисует верхний сепаратор — включаем.
+                        .listRowSeparator(index == 0 ? .visible : .automatic, edges: .top)
                     }
                 }
                 .listStyle(.plain)
@@ -249,6 +254,24 @@ struct AccountsView: View {
         // Без этого строка читается тремя отдельными остановками вместо одной фразы.
         .accessibilityElement(children: .combine)
         .accessibilityHint("Дважды коснитесь, чтобы изменить баланс")
+    }
+
+    // Отметка основного счёта. Отдельная кнопка, а не тап по строке:
+    // тап по строке уже занят корректировкой баланса.
+    private func selectionMark(for account: BankAccount) -> some View {
+        let isSelected = viewModel.selectedAccountId == account.id
+
+        return Button {
+            Task {
+                await viewModel.select(account: account)
+            }
+        } label: {
+            Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
+                .scaledFont(size: 20)
+                .foregroundStyle(isSelected ? Color.accentColor : Color(.tertiaryLabel))
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(isSelected ? "Основной счёт" : "Сделать основным")
     }
 
     private var addButton: some View {

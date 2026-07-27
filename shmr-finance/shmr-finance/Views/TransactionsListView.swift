@@ -75,8 +75,8 @@ struct TransactionsListView: View {
             .sheet(isPresented: $showDatePicker) {
                 datePickerSheet
             }
-            // Грузит при появлении и заново при каждой смене даты.
-            .task(id: viewModel.selectedDate) {
+            // Грузит при появлении и заново при смене даты или выбранного счёта.
+            .task(id: viewModel.reloadKey) {
                 await viewModel.load()
             }
         }

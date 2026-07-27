@@ -21,7 +21,7 @@ final class BankAccountsService {
             }
             try? await storage?.save(accounts)
             OfflineState.shared.markOnline()
-            return accounts
+            return accounts.sorted(by: byID)
         } catch {
             let cached = (try? await storage?.getAll()) ?? []
             let pending = (try? await backup?.getAll()) ?? []
@@ -40,8 +40,45 @@ final class BankAccountsService {
             for account in pending {
                 merged[account.id] = account
             }
-            return Array(merged.values)
+            return merged.values.sorted(by: byID)
         }
+    }
+
+    private func byID(_ first: BankAccount, _ second: BankAccount) -> Bool {
+        first.id < second.id
+    }
+
+    // Выбранный счёт пользователя. Если выбор ещё не сделан или счёт исчез
+    // с сервера, берём первый и сразу его запоминаем: дальше и сеть, и кеш
+    // должны смотреть на одно и то же значение.
+    func selectedAccount() async throws -> BankAccount? {
+        let accounts = try await bankAccounts()
+        return selectedAccount(among: accounts)
+    }
+
+    // Тот же выбор, но по уже загруженному списку: экрану счетов незачем
+    // ходить в сеть второй раз, счета у него на руках.
+    @discardableResult
+    func selectedAccount(among accounts: [BankAccount]) -> BankAccount? {
+        if let id = SelectedAccountStore.shared.id {
+            let chosen = accounts.first(where: { account in
+                account.id == id
+            })
+            if let chosen {
+                return chosen
+            }
+        }
+
+        guard let fallback = accounts.first else {
+            return nil
+        }
+        SelectedAccountStore.shared.select(id: fallback.id)
+        return fallback
+    }
+
+    // Запомнить выбор пользователя.
+    func selectAccount(id: Int) {
+        SelectedAccountStore.shared.select(id: id)
     }
 
     @discardableResult
