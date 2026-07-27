@@ -1,24 +1,54 @@
 import Foundation
 
-// Сервис категорий. Мок: данные захардкожены в коде.
+// Сервис категорий: данные с бэкенда через NetworkClient, копия — в локальном хранилище.
 final class CategoriesService {
 
-    private let allCategories: [Category] = [
-        Category(id: 1, name: "Зарплата", emoji: "💰", direction: .income),
-        Category(id: 2, name: "Подработка", emoji: "💸", direction: .income),
-        Category(id: 3, name: "Продукты", emoji: "🛒", direction: .outcome),
-        Category(id: 4, name: "Кафе", emoji: "☕️", direction: .outcome),
-        Category(id: 5, name: "Транспорт", emoji: "🚕", direction: .outcome),
-        Category(id: 6, name: "Развлечения", emoji: "🎮", direction: .outcome)
-    ]
+    // Общий экземпляр на всё приложение.
+    static let shared = CategoriesService()
 
-    func categories() async -> [Category] {
-        return allCategories
+    private let client = NetworkClient.shared
+    private let storage = LocalStorages.categories
+
+    func categories() async throws -> [Category] {
+        do {
+            let dtos: [CategoryDTO] = try await client.request(path: "categories")
+            let categories = dtos.compactMap { dto in
+                dto.toDomain()
+            }
+            // Кеш обновляем при каждом успешном ответе. Сбой записи не должен
+            // ронять запрос: данные у пользователя уже есть.
+            try? await storage?.replaceAll(with: categories)
+            OfflineState.shared.markOnline()
+            return categories
+        } catch {
+            let cached = (try? await storage?.getAll()) ?? []
+            guard cached.isEmpty == false else {
+                throw error
+            }
+            OfflineState.shared.markOffline()
+            return cached
+        }
     }
 
-    func categories(direction: Direction) async -> [Category] {
-        return allCategories.filter { category in
-            category.direction == direction
+    func categories(direction: Direction) async throws -> [Category] {
+        do {
+            let dtos: [CategoryDTO] = try await client.request(
+                path: "categories/type/\(direction.isIncome)"
+            )
+            // В кеш этот ответ не пишем: здесь только половина категорий,
+            // и replaceAll стёр бы вторую.
+            return dtos.compactMap { dto in
+                dto.toDomain()
+            }
+        } catch {
+            let cached = (try? await storage?.getAll()) ?? []
+            let filtered = cached.filter { category in
+                category.direction == direction
+            }
+            guard filtered.isEmpty == false else {
+                throw error
+            }
+            return filtered
         }
     }
 }

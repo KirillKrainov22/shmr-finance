@@ -8,6 +8,7 @@ struct TransactionsListView: View {
     @State private var showAddTransaction = false
     @State private var showAnalytics = false
     @State private var showDatePicker = false
+    @State private var transactionToEdit: Transaction?
 
     init(direction: Direction) {
         // @State нельзя присвоить напрямую в init — только через State(initialValue:).
@@ -25,6 +26,11 @@ struct TransactionsListView: View {
                 List {
                     ForEach(Array(viewModel.sortedTransactions.enumerated()), id: \.element.id) { index, transaction in
                         row(for: transaction)
+                            .listRowBackground(backgroundColor) // фон строки = фон экрана
+                            .contentShape(Rectangle()) // тапабельна вся строка
+                            .onTapGesture {
+                                transactionToEdit = transaction
+                            }
                             // У первой строки List сам не рисует верхний сепаратор — включаем.
                             .listRowSeparator(index == 0 ? .visible : .automatic, edges: .top)
                     }
@@ -35,9 +41,21 @@ struct TransactionsListView: View {
             .background(backgroundColor)
             .environment(\.locale, Locale(identifier: "ru_RU")) // ₽ и русские даты на всём экране
             .toolbar(.hidden, for: .navigationBar)
+            .overlay {
+                if viewModel.isLoading {
+                    ProgressView()
+                        .controlSize(.large)
+                }
+            }
             .overlay(alignment: .bottomTrailing) {
                 addButton
             }
+            .alert("Ошибка", isPresented: $viewModel.showError) {
+                Button("Ок", role: .cancel) {}
+            } message: {
+                Text(viewModel.errorMessage)
+            }
+            .errorFeedback(when: viewModel.showError)
             .navigationDestination(isPresented: $showAnalytics) {
                 AnalyticsView()
             }
@@ -45,13 +63,20 @@ struct TransactionsListView: View {
                 SettingsView(direction: viewModel.direction)
             }
             .sheet(isPresented: $showAddTransaction) {
-                Text("Новая операция (заглушка)")
+                TransactionEditView(mode: .create, direction: viewModel.direction) {
+                    Task { await viewModel.load() }
+                }
+            }
+            .sheet(item: $transactionToEdit) { transaction in
+                TransactionEditView(mode: .edit(transaction), direction: viewModel.direction) {
+                    Task { await viewModel.load() }
+                }
             }
             .sheet(isPresented: $showDatePicker) {
                 datePickerSheet
             }
-            // Грузит при появлении и заново при каждой смене даты.
-            .task(id: viewModel.selectedDate) {
+            // Грузит при появлении и заново при смене даты или выбранного счёта.
+            .task(id: viewModel.reloadKey) {
                 await viewModel.load()
             }
         }
@@ -65,16 +90,16 @@ struct TransactionsListView: View {
             Spacer()
             HStack(spacing: 8) {
                 sortMenu
-                circleButton(systemName: "chart.pie") {
+                circleButton(systemName: "chart.pie", label: "Аналитика") {
                     showAnalytics = true
                 }
-                circleButton(systemName: "slider.horizontal.3") {
+                circleButton(systemName: "slider.horizontal.3", label: "Настройки") {
                     showSettings = true
                 }
             }
         }
         .padding(.horizontal, 12)
-        .frame(height: 64)
+        .frame(minHeight: 64)
     }
 
     private var sortMenu: some View {
@@ -88,10 +113,15 @@ struct TransactionsListView: View {
             }
         } label: {
             Image(systemName: "arrow.up.arrow.down")
-                .frame(width: 40, height: 40)
+                .scaledSquare(40)
+                // Значок отзывается на смену порядка — единственное место,
+                // где анимация успевает быть замеченной: экран остаётся на месте.
+                .symbolEffect(.bounce, value: viewModel.sortOption)
         }
         .tint(.primary) // Menu красит значок акцентным — форсируем чёрный
         .glassCapsule()
+        .accessibilityLabel("Сортировка")
+        .accessibilityValue(viewModel.sortOption.rawValue)
     }
 
     private var dateChip: some View {
@@ -105,23 +135,30 @@ struct TransactionsListView: View {
                     format: .dateTime.day().month(.wide)
                 )
             }
-            .font(.system(size: 15, weight: .medium))
+            .scaledFont(size: 15, weight: .medium)
             .foregroundStyle(.primary)
             .padding(.horizontal, 12)
             .padding(.vertical, 8)
         }
         .buttonStyle(.plain) // без .plain кнопка красит содержимое акцентным цветом
         .glassCapsule()
+        .accessibilityLabel("Выбрать дату")
     }
 
-    private func circleButton(systemName: String, action: @escaping () -> Void) -> some View {
+    private func circleButton(
+        systemName: String,
+        label: String,
+        action: @escaping () -> Void
+    ) -> some View {
         Button(action: action) {
             Image(systemName: systemName)
                 .foregroundStyle(.primary)
-                .frame(width: 40, height: 40)
+                .scaledSquare(40)
         }
         .buttonStyle(.plain)
         .glassCapsule()
+        // Кнопка без текста — без подписи VoiceOver прочитает служебное имя значка.
+        .accessibilityLabel(label)
     }
 
     private var datePickerSheet: some View {
@@ -149,15 +186,20 @@ struct TransactionsListView: View {
     private var header: some View {
         VStack(alignment: .leading, spacing: 4) {
             Text(totalLabel)
-                .font(.system(size: 14, weight: .medium))
+                .scaledFont(size: 14, weight: .medium)
                 .foregroundStyle(.secondary)
             Text(viewModel.total, format: currencyFormat)
                 .font(.largeTitle.bold())
+                // Разряды перематываются при смене дня, а не подменяются рывком.
+                .contentTransition(.numericText())
+                .animation(.default, value: viewModel.total)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(.horizontal, 20)
         .padding(.top, 12)
         .padding(.bottom, 32)
+        // Заголовок и сумма — одна фраза, а не две остановки подряд.
+        .accessibilityElement(children: .combine)
     }
 
     private func row(for transaction: Transaction) -> some View {
@@ -166,18 +208,24 @@ struct TransactionsListView: View {
                 ZStack {
                     Circle()
                         .stroke(Color(.separator), lineWidth: 1)
-                        .frame(width: 40, height: 40)
+                        .scaledSquare(40)
                     Text(String(category.emoji))
-                        .font(.system(size: 22))
+                        .scaledFont(size: 22)
                 }
+                // Эмодзи — украшение. Иначе VoiceOver прочитает его название
+                // («автомобиль») перед названием категории.
+                .accessibilityHidden(true)
                 Text(category.name)
-                    .font(.system(size: 16, weight: .medium))
+                    .scaledFont(size: 16, weight: .medium)
             }
             Spacer()
             Text(transaction.amount, format: currencyFormat)
-                .font(.system(size: 14, weight: .medium))
+                .scaledFont(size: 14, weight: .medium)
         }
-        .padding(.vertical, 8)
+        .padding(.vertical, 3)
+        // Без этого строка читается тремя отдельными остановками вместо одной фразы.
+        .accessibilityElement(children: .combine)
+        .accessibilityHint("Дважды коснитесь, чтобы изменить")
     }
 
     private var addButton: some View {
@@ -187,10 +235,11 @@ struct TransactionsListView: View {
             Image(systemName: "plus")
                 .font(.title2.weight(.semibold))
                 .foregroundStyle(.white)
-                .frame(width: 56, height: 56)
+                .scaledSquare(56)
                 .background(Circle().fill(Color.accentColor))
         }
         .padding(16)
+        .accessibilityLabel("Добавить операцию")
     }
 
     private var totalLabel: String {
@@ -215,4 +264,5 @@ struct TransactionsListView: View {
 #Preview {
     TransactionsListView(direction: .outcome)
 }
+
 

@@ -3,8 +3,12 @@ import SwiftUI
 // Экран «Счета»: общий баланс и список счетов. Тот же shell, что и экран операций.
 struct AccountsView: View {
 
+    // Открыт ли этот экран сейчас. Вкладки TabView живут все одновременно,
+    // поэтому экран продолжает слушать тряску, даже когда его не видно, —
+    // без этого флага баланс скрывался бы с любой вкладки.
+    var isVisible = true
+
     @State private var viewModel = BankAccountsViewModel()
-    @State private var selectedDate = Date()
     @State private var showSettings = false
     @State private var showAnalytics = false
     @State private var showDatePicker = false
@@ -13,42 +17,60 @@ struct AccountsView: View {
     @State private var isBalanceHidden = false
 
     var body: some View {
-        NavigationStack {
-            ScrollView {
-                // pinnedViews: заголовок секции "прилипает" сверху и перекрывает
-                // строки при обычном скролле, но при оттягивании вниз (pull to
-                // refresh) уходит вместе с контентом, открывая индикатор обновления.
-                LazyVStack(spacing: 0, pinnedViews: [.sectionHeaders]) {
-                    Section {
-                        ForEach(Array(viewModel.accounts.enumerated()), id: \.element.id) { index, account in
+        @Bindable var viewModel = viewModel
+
+        return NavigationStack {
+            VStack(spacing: 0) {
+                topBar
+                balanceHeader
+
+                // Тот же List, что и на экранах операций — тогда сепараторы,
+                // высота строк и фон совпадают один-в-один автоматически.
+                List {
+                    ForEach(Array(viewModel.displayedAccounts.enumerated()), id: \.element.id) { index, account in
+                        // Галочка вынесена из тапабельной области строки:
+                        // тап по строке уже занят корректировкой баланса.
+                        HStack(spacing: 12) {
                             row(for: account)
-                                .padding(.horizontal, 20)
-                                .contentShape(Rectangle())
+                                .contentShape(Rectangle()) // тапабельна вся строка
                                 .onTapGesture {
-                                    accountToCorrect = account
+                                    // Правим настоящий баланс, а не показанный за прошлую дату.
+                                    accountToCorrect = viewModel.actualAccount(id: account.id)
                                 }
-                            if index != viewModel.accounts.count - 1 {
-                                Divider().padding(.leading, 20)
-                            }
+                            selectionMark(for: account)
                         }
-                    } header: {
-                        VStack(spacing: 0) {
-                            topBar
-                            balanceHeader
-                        }
-                        .background(backgroundColor)
+                        .listRowBackground(backgroundColor) // фон строки = фон экрана
+                        // У первой строки List сам не рисует верхний сепаратор — включаем.
+                        .listRowSeparator(index == 0 ? .visible : .automatic, edges: .top)
                     }
                 }
-            }
-            .refreshable {
-                await viewModel.load()
+                .listStyle(.plain)
+                .scrollContentBackground(.hidden) // прячем белый фон списка, чтобы был виден фон экрана
+                .refreshable {
+                    await viewModel.load()
+                }
             }
             .background(backgroundColor)
             .environment(\.locale, Locale(identifier: "ru_RU"))
             .toolbar(.hidden, for: .navigationBar)
+            .overlay {
+                if viewModel.isLoading {
+                    ProgressView()
+                        .controlSize(.large)
+                }
+            }
             .overlay(alignment: .bottomTrailing) {
                 addButton
             }
+            .alert("Ошибка", isPresented: $viewModel.showError) {
+                Button("Ок", role: .cancel) {}
+            } message: {
+                Text(viewModel.errorMessage)
+            }
+            .errorFeedback(when: viewModel.showError)
+            // Баланс прячется мягкой анимацией, поэтому и отдача мягкая по характеру,
+            // но в полную силу — иначе на тряске её почти не чувствуешь.
+            .sensoryFeedback(.impact(flexibility: .soft, intensity: 1), trigger: isBalanceHidden)
             .navigationDestination(isPresented: $showAnalytics) {
                 AnalyticsView()
             }
@@ -68,10 +90,14 @@ struct AccountsView: View {
             .sheet(isPresented: $showAddAccount) {
                 Text("Добавление счёта (заглушка)")
             }
-            .task {
+            // Грузит при появлении и заново при каждой смене даты.
+            .task(id: viewModel.selectedDate) {
                 await viewModel.load()
             }
             .onShake {
+                guard isVisible else {
+                    return
+                }
                 isBalanceHidden.toggle()
             }
         }
@@ -82,16 +108,16 @@ struct AccountsView: View {
             dateChip
             Spacer()
             HStack(spacing: 8) {
-                circleButton(systemName: "chart.pie") {
+                circleButton(systemName: "chart.pie", label: "Аналитика") {
                     showAnalytics = true
                 }
-                circleButton(systemName: "slider.horizontal.3") {
+                circleButton(systemName: "slider.horizontal.3", label: "Настройки") {
                     showSettings = true
                 }
             }
         }
         .padding(.horizontal, 12)
-        .frame(height: 64)
+        .frame(minHeight: 64)
     }
 
     private var dateChip: some View {
@@ -101,34 +127,43 @@ struct AccountsView: View {
             HStack(spacing: 4) {
                 Image(systemName: "calendar")
                 Text(
-                    selectedDate,
+                    viewModel.selectedDate,
                     format: .dateTime.day().month(.wide)
                 )
             }
-            .font(.system(size: 15, weight: .medium))
+            .scaledFont(size: 15, weight: .medium)
             .foregroundStyle(.primary)
             .padding(.horizontal, 12)
             .padding(.vertical, 8)
         }
         .buttonStyle(.plain)
         .glassCapsule()
+        .accessibilityLabel("Выбрать дату")
     }
 
-    private func circleButton(systemName: String, action: @escaping () -> Void) -> some View {
+    private func circleButton(
+        systemName: String,
+        label: String,
+        action: @escaping () -> Void
+    ) -> some View {
         Button(action: action) {
             Image(systemName: systemName)
                 .foregroundStyle(.primary)
-                .frame(width: 40, height: 40)
+                .scaledSquare(40)
         }
         .buttonStyle(.plain)
         .glassCapsule()
+        // Кнопка без текста — без подписи VoiceOver прочитает служебное имя значка.
+        .accessibilityLabel(label)
     }
 
     private var datePickerSheet: some View {
-        NavigationStack {
+        @Bindable var viewModel = viewModel
+
+        return NavigationStack {
             DatePicker(
                 "Дата",
-                selection: $selectedDate,
+                selection: $viewModel.selectedDate,
                 displayedComponents: .date
             )
             .datePickerStyle(.graphical)
@@ -148,7 +183,7 @@ struct AccountsView: View {
     private var balanceHeader: some View {
         VStack(alignment: .leading, spacing: 4) {
             Text("баланс")
-                .font(.system(size: 14, weight: .medium))
+                .scaledFont(size: 14, weight: .medium)
                 .foregroundStyle(.secondary)
             balanceValue
         }
@@ -156,6 +191,22 @@ struct AccountsView: View {
         .padding(.horizontal, 20)
         .padding(.top, 12)
         .padding(.bottom, 32)
+        // Прозрачность прячет баланс только от глаз: VoiceOver прочитал бы его
+        // вслух даже скрытым, и смысл функции ломался бы наоборот.
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(balanceAccessibilityLabel)
+    }
+
+    private var balanceAccessibilityLabel: String {
+        guard isBalanceHidden == false else {
+            return "Баланс скрыт. Потрясите устройство, чтобы показать"
+        }
+        let amount = viewModel.totalBalance.formatted(
+            .currency(code: viewModel.currencyCode)
+                .precision(.fractionLength(0...2))
+                .locale(Locale(identifier: "ru_RU"))
+        )
+        return "Баланс \(amount)"
     }
 
     // Сумма или спойлер поверх неё, если баланс скрыт (по тряске).
@@ -167,7 +218,10 @@ struct AccountsView: View {
         )
 
         return Text(balanceString)
-            .font(.system(size: 34, weight: .bold, design: .rounded))
+            .scaledFont(size: 34, weight: .bold, design: .rounded)
+            // Разряды перематываются при смене даты, а не подменяются рывком.
+            .contentTransition(.numericText())
+            .animation(.default, value: viewModel.totalBalance)
             .opacity(isBalanceHidden ? 0 : 1)
             .overlay {
                 if isBalanceHidden {
@@ -184,17 +238,40 @@ struct AccountsView: View {
             ZStack {
                 Circle()
                     .stroke(Color(.separator), lineWidth: 1)
-                    .frame(width: 40, height: 40)
-                Text("💰")
-                    .font(.system(size: 22))
+                    .scaledSquare(40)
+                Text(account.emoji)
+                    .scaledFont(size: 22)
             }
+            // Эмодзи — украшение, его название только зашумит озвучку.
+            .accessibilityHidden(true)
             Text(account.name)
-                .font(.system(size: 16, weight: .medium))
+                .scaledFont(size: 16, weight: .medium)
             Spacer()
             Text(account.balance, format: currencyFormat)
-                .font(.system(size: 14, weight: .medium))
+                .scaledFont(size: 14, weight: .medium)
         }
-        .padding(.vertical, 8)
+        .padding(.vertical, 3)
+        // Без этого строка читается тремя отдельными остановками вместо одной фразы.
+        .accessibilityElement(children: .combine)
+        .accessibilityHint("Дважды коснитесь, чтобы изменить баланс")
+    }
+
+    // Отметка основного счёта. Отдельная кнопка, а не тап по строке:
+    // тап по строке уже занят корректировкой баланса.
+    private func selectionMark(for account: BankAccount) -> some View {
+        let isSelected = viewModel.selectedAccountId == account.id
+
+        return Button {
+            Task {
+                await viewModel.select(account: account)
+            }
+        } label: {
+            Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
+                .scaledFont(size: 20)
+                .foregroundStyle(isSelected ? Color.accentColor : Color(.tertiaryLabel))
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(isSelected ? "Основной счёт" : "Сделать основным")
     }
 
     private var addButton: some View {
@@ -204,10 +281,11 @@ struct AccountsView: View {
             Image(systemName: "plus")
                 .font(.title2.weight(.semibold))
                 .foregroundStyle(.white)
-                .frame(width: 56, height: 56)
+                .scaledSquare(56)
                 .background(Circle().fill(Color.accentColor))
         }
         .padding(16)
+        .accessibilityLabel("Добавить счёт")
     }
 
     private var currencyFormat: Decimal.FormatStyle.Currency {
@@ -222,4 +300,7 @@ struct AccountsView: View {
 #Preview {
     AccountsView()
 }
+
+
+
 

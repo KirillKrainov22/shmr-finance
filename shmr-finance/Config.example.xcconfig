@@ -1,0 +1,4 @@
+// Шаблон конфигурации.
+// Скопируй этот файл рядом под именем Config.xcconfig и впиши свой токен.
+
+API_TOKEN = PASTE_YOUR_TOKEN_HERE
