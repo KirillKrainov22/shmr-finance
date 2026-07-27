@@ -33,18 +33,19 @@ struct BalanceCorrectionView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    circleToolbarButton(systemName: "xmark", foreground: .primary, background: Color(.systemGray5)) {
+                    circleToolbarButton(systemName: "xmark", label: "Закрыть", foreground: .primary, background: Color(.systemGray5)) {
                         dismiss()
                     }
                 }
                 ToolbarItem(placement: .confirmationAction) {
-                    circleToolbarButton(systemName: "checkmark", foreground: .white, background: .accentColor) {
+                    circleToolbarButton(systemName: "checkmark", label: "Сохранить", foreground: .white, background: .accentColor) {
                         confirm()
                     }
                 }
             }
             .presentationDetents([.medium, .large])
         }
+        .presentationBackground(Color(.systemBackground)) // белый фон, как у формы операции
     }
 
     // Сумма по центру, крупным rounded-шрифтом, с подчёркиванием. Тап — системная клавиатура.
@@ -64,7 +65,7 @@ struct BalanceCorrectionView: View {
                     }
                 Text(currencySymbol)
             }
-            .font(.system(size: 32, weight: .bold, design: .rounded))
+            .scaledFont(size: 32, weight: .bold, design: .rounded)
 
             Rectangle()
                 .fill(Color(.separator))
@@ -87,6 +88,7 @@ struct BalanceCorrectionView: View {
 
     private func circleToolbarButton(
         systemName: String,
+        label: String,
         foreground: Color,
         background: Color,
         action: @escaping () -> Void
@@ -99,6 +101,8 @@ struct BalanceCorrectionView: View {
                 .background(Circle().fill(background))
         }
         .buttonStyle(.plain)
+        // Кнопка без текста — без подписи VoiceOver прочитает служебное имя значка.
+        .accessibilityLabel(label)
     }
 
     private func confirm() {
@@ -138,14 +142,15 @@ struct BalanceCorrectionView: View {
     }
 
     private var dateText: String {
-        date.formatted(
-            .dateTime
-                .day()
-                .month(.wide)
-                .hour()
-                .minute()
-                .locale(Locale(identifier: "ru_RU"))
+        // «20 февраля, 23:42» — дата и время через запятую (системный формат вставляет «в»).
+        let locale = Locale(identifier: "ru_RU")
+        let day = date.formatted(
+            .dateTime.day().month(.wide).locale(locale)
         )
+        let time = date.formatted(
+            .dateTime.hour().minute().locale(locale)
+        )
+        return "\(day), \(time)"
     }
 
     private var currencySymbol: String {

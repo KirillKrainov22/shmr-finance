@@ -6,8 +6,12 @@ struct CategoriesView: View {
     @State private var viewModel: CategoriesViewModel
     @Environment(\.dismiss) private var dismiss
 
-    init(direction: Direction?) {
+    // Необязательный колбэк выбора: если задан — по тапу на статью она возвращается и экран закрывается.
+    private let onSelect: ((Category) -> Void)?
+
+    init(direction: Direction?, onSelect: ((Category) -> Void)? = nil) {
         _viewModel = State(initialValue: CategoriesViewModel(direction: direction))
+        self.onSelect = onSelect
     }
 
     var body: some View {
@@ -16,6 +20,14 @@ struct CategoriesView: View {
         return NavigationStack {
             List(viewModel.filteredCategories) { category in
                 row(for: category)
+                    .frame(maxWidth: .infinity, alignment: .leading) // ячейка на всю ширину
+                    .contentShape(Rectangle()) // тапабельна вся строка, а не только эмодзи с текстом
+                    .onTapGesture {
+                        onSelect?(category)
+                        if onSelect != nil {
+                            dismiss()
+                        }
+                    }
             }
             .listStyle(.plain)
             .navigationTitle("Статьи")
@@ -35,6 +47,7 @@ struct CategoriesView: View {
                             .glassCapsule()
                     }
                     .buttonStyle(.plain)
+                    .accessibilityLabel("Закрыть")
                 }
                 // iOS 26: нативный поиск в нижнем баре, прижат вправо, минимизируется в иконку.
                 if #available(iOS 26, *) {
@@ -42,6 +55,18 @@ struct CategoriesView: View {
                     DefaultToolbarItem(kind: .search, placement: .bottomBar)
                 }
             }
+            .overlay {
+                if viewModel.isLoading {
+                    ProgressView()
+                        .controlSize(.large)
+                }
+            }
+            .alert("Ошибка", isPresented: $viewModel.showError) {
+                Button("Ок", role: .cancel) {}
+            } message: {
+                Text(viewModel.errorMessage)
+            }
+            .errorFeedback(when: viewModel.showError)
             .task {
                 await viewModel.load()
             }
@@ -56,13 +81,16 @@ struct CategoriesView: View {
             ZStack {
                 Circle()
                     .stroke(Color(.separator), lineWidth: 1)
-                    .frame(width: 40, height: 40)
+                    .scaledSquare(40)
                 Text(String(category.emoji))
-                    .font(.system(size: 22))
+                    .scaledFont(size: 22)
             }
+            // Эмодзи — украшение, его название только зашумит озвучку.
+            .accessibilityHidden(true)
             Text(category.name)
-                .font(.system(size: 16, weight: .medium))
+                .scaledFont(size: 16, weight: .medium)
         }
+        .accessibilityElement(children: .combine)
     }
 }
 
