@@ -6,6 +6,10 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		86C87A443018F88C0048A136 /* PieChart in Frameworks */ = {isa = PBXBuildFile; productRef = 86C87A433018F88C0048A136 /* PieChart */; };
+/* End PBXBuildFile section */
+
 /* Begin PBXContainerItemProxy section */
 		86830DD53007BA9900A0C704 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
@@ -55,6 +59,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				86C87A443018F88C0048A136 /* PieChart in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -118,6 +123,7 @@
 			);
 			name = "shmr-finance";
 			packageProductDependencies = (
+				86C87A433018F88C0048A136 /* PieChart */,
 			);
 			productName = "shmr-finance";
 			productReference = 86830DC73007BA9600A0C704 /* shmr-finance.app */;
@@ -201,6 +207,9 @@
 			);
 			mainGroup = 86830DBE3007BA9600A0C704;
 			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				86C87A423018F88C0048A136 /* XCLocalSwiftPackageReference "../../дзшмр/Utilities" */,
+			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 86830DC83007BA9600A0C704 /* Products */;
 			projectDirPath = "";
@@ -584,6 +593,20 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCLocalSwiftPackageReference section */
+		86C87A423018F88C0048A136 /* XCLocalSwiftPackageReference "../../дзшмр/Utilities" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = "../../дзшмр/Utilities";
+		};
+/* End XCLocalSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		86C87A433018F88C0048A136 /* PieChart */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = PieChart;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = 86830DBF3007BA9600A0C704 /* Project object */;
 }

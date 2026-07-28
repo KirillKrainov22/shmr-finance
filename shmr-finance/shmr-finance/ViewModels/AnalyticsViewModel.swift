@@ -155,6 +155,31 @@ final class AnalyticsViewModel {
         return account?.name ?? "Все счета"
     }
 
+    // Суммы по статьям, от крупных к мелким. Порядок важен: собственные
+    // сегменты диаграммы достаются первым пяти, остальные сливаются в «Другое»,
+    // и логичнее прятать туда мелочь, а не случайные статьи.
+    var totalsByCategory: [(label: String, value: Decimal)] {
+        var sumsByCategoryID: [Int: Decimal] = [:]
+        for transaction in transactions {
+            sumsByCategoryID[transaction.categoryId, default: 0] += transaction.amount
+        }
+
+        var result: [(label: String, value: Decimal)] = []
+        for (categoryID, value) in sumsByCategoryID {
+            let category = categories.first { category in
+                category.id == categoryID
+            }
+            guard let category else {
+                continue
+            }
+            result.append((label: category.name, value: value))
+        }
+
+        return result.sorted { first, second in
+            first.value > second.value
+        }
+    }
+
     var total: Decimal {
         transactions.reduce(Decimal(0)) { partialSum, transaction in
             partialSum + transaction.amount

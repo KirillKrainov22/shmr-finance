@@ -1,4 +1,5 @@
 import UIKit
+import PieChart
 
 // Экран «Аналитика» целиком на UIKit, как требует ТЗ. Только чтение:
 // операции показываются, но не редактируются.
@@ -15,9 +16,6 @@ final class AnalyticsViewController: UIViewController {
         case categories
         case account
         case sort
-        // Сумма за период по ТЗ должна быть на экране. В макете она в центре
-        // диаграммы, но диаграмма будет только в следующем блоке.
-        case total
     }
 
     // Кнопка назад отдаёт управление обратно в SwiftUI-навигацию.
@@ -25,6 +23,9 @@ final class AnalyticsViewController: UIViewController {
 
     private let viewModel: AnalyticsViewModel
     private let tableView = UITableView(frame: .zero, style: .plain)
+    // Диаграмма живёт шапкой таблицы: по макету она уезжает вместе со списком,
+    // а не висит закреплённой сверху.
+    private let chartView = PieChartView()
     private let spinner = UIActivityIndicatorView(style: .large)
 
     // Шторка периода живёт дольше одного показа: при взаимной коррекции
@@ -49,11 +50,11 @@ final class AnalyticsViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
 
-        title = "Аналитика"
         view.backgroundColor = .systemBackground
 
         setUpNavigationBar()
         setUpTableView()
+        setUpChartTap()
         setUpSpinner()
 
         viewModel.onChange = { [weak self] in
@@ -69,13 +70,29 @@ final class AnalyticsViewController: UIViewController {
     // MARK: - Сборка интерфейса
 
     private func setUpNavigationBar() {
-        navigationItem.leftBarButtonItem = UIBarButtonItem(
+        let back = UIBarButtonItem(
             image: UIImage(systemName: "chevron.left"),
             primaryAction: UIAction { [weak self] _ in
                 self?.onClose?()
             }
         )
-        navigationItem.leftBarButtonItem?.accessibilityLabel = "Назад"
+        back.accessibilityLabel = "Назад"
+
+        // Заголовок идёт вторым элементом левой группы, сразу за кнопкой назад.
+        // Обычный title навбар ставит по центру, а в макете он прижат влево.
+        let titleLabel = UILabel()
+        titleLabel.text = "Аналитика"
+        titleLabel.font = .systemFont(ofSize: 20, weight: .semibold)
+        titleLabel.textColor = .label
+        titleLabel.accessibilityTraits = .header
+
+        let titleItem = UIBarButtonItem(customView: titleLabel)
+        // Иначе iOS 26 подложит под заголовок такое же стекло, как под кнопку.
+        if #available(iOS 26.0, *) {
+            titleItem.hidesSharedBackground = true
+        }
+
+        navigationItem.leftBarButtonItems = [back, titleItem]
     }
 
     private func setUpTableView() {
@@ -95,6 +112,31 @@ final class AnalyticsViewController: UIViewController {
             tableView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
             tableView.bottomAnchor.constraint(equalTo: view.bottomAnchor)
         ])
+    }
+
+    private func setUpChartTap() {
+        // Тапабельна вся прямоугольная область шапки, а не только само кольцо:
+        // попадать пальцем в тонкую дугу неудобно.
+        chartView.isUserInteractionEnabled = true
+        chartView.addGestureRecognizer(
+            UITapGestureRecognizer(
+                target: self,
+                action: #selector(chartTapped)
+            )
+        )
+        chartView.accessibilityLabel = "Диаграмма расходов по статьям"
+        chartView.accessibilityHint = "Дважды коснитесь, чтобы открыть детализацию"
+        chartView.isAccessibilityElement = true
+    }
+
+    @objc
+    private func chartTapped() {
+        // Пустую диаграмму раскрывать незачем — показывать в списке нечего.
+        guard chartView.entities.isEmpty == false else {
+            return
+        }
+        let details = AnalyticsDetailsViewController(entities: chartView.entities)
+        presentSheet(details, detents: [.medium(), .large()])
     }
 
     private func setUpSpinner() {
@@ -124,7 +166,38 @@ final class AnalyticsViewController: UIViewController {
         } else {
             spinner.stopAnimating()
         }
+
+        chartView.entities = viewModel.totalsByCategory.map { item in
+            Entity(value: item.value, label: item.label)
+        }
+        layoutChartHeader()
+
         tableView.reloadData()
+    }
+
+    override func viewDidLayoutSubviews() {
+        super.viewDidLayoutSubviews()
+        layoutChartHeader()
+    }
+
+    // tableHeaderView не участвует в автолейауте — размер ему задаём руками,
+    // и присваиваем заново, иначе таблица не пересчитает отступ сверху.
+    private func layoutChartHeader() {
+        let width = tableView.bounds.width
+        guard width > 0 else {
+            return
+        }
+
+        let height = chartView.sizeThatFits(
+            CGSize(width: width, height: .greatestFiniteMagnitude)
+        ).height
+        let size = CGSize(width: width, height: height)
+
+        guard chartView.frame.size != size || tableView.tableHeaderView == nil else {
+            return
+        }
+        chartView.frame = CGRect(origin: .zero, size: size)
+        tableView.tableHeaderView = chartView
     }
 
     private func showError(_ message: String) {
@@ -400,15 +473,6 @@ extension AnalyticsViewController: UITableViewDataSource {
             filterCell.configure(title: "Счёт", value: viewModel.accountTitle)
         case .sort:
             filterCell.configure(title: "Сортировка", value: viewModel.sortOption.rawValue)
-        case .total:
-            filterCell.configure(title: "Сумма", value: formattedTotal)
-        }
-
-        // Сумма не фильтр — по ней нечего открывать.
-        if case .total = row {
-            filterCell.selectionStyle = .none
-        } else {
-            filterCell.selectionStyle = .default
         }
 
         return filterCell
@@ -431,13 +495,6 @@ extension AnalyticsViewController: UITableViewDataSource {
         return transactionCell
     }
 
-    private var formattedTotal: String {
-        viewModel.total.formatted(
-            .currency(code: "RUB")
-                .precision(.fractionLength(0...2))
-                .locale(Locale(identifier: "ru_RU"))
-        )
-    }
 }
 
 // MARK: - Нажатия
@@ -465,8 +522,6 @@ extension AnalyticsViewController: UITableViewDelegate {
             showAccountPicker()
         case .sort:
             showSortPicker()
-        case .total:
-            break
         }
     }
 }
