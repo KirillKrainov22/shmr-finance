@@ -14,6 +14,7 @@ final class AnalyticsViewController: UIViewController {
         case period
         case categories
         case account
+        case sort
         // Сумма за период по ТЗ должна быть на экране. В макете она в центре
         // диаграммы, но диаграмма будет только в следующем блоке.
         case total
@@ -277,6 +278,35 @@ final class AnalyticsViewController: UIViewController {
         presentSheet(picker, detents: [.medium(), .large()])
     }
 
+    private func showSortPicker() {
+        let all = TransactionSort.allCases
+        // У вариантов сортировки нет числовых id, поэтому берём порядковый номер.
+        let options = all.enumerated().map { index, option in
+            OptionPickerViewController.Option(id: index, title: option.rawValue)
+        }
+        let selected = all.firstIndex(of: viewModel.sortOption) ?? 0
+
+        let picker = OptionPickerViewController(
+            title: "Сортировка",
+            options: options,
+            selectedIDs: [selected],
+            mode: .single
+        ) { [weak self] ids in
+            guard
+                let self,
+                let index = ids.first,
+                all.indices.contains(index)
+            else {
+                return
+            }
+            self.viewModel.setSortOption(all[index])
+            // Данные те же, меняется только порядок — в сеть идти незачем.
+            self.render()
+        }
+
+        presentSheet(picker, detents: [.medium(), .large()])
+    }
+
     private func showAccountPicker() {
         var options = [
             OptionPickerViewController.Option(
@@ -368,6 +398,8 @@ extension AnalyticsViewController: UITableViewDataSource {
             filterCell.configure(title: "Статьи", value: viewModel.categoriesTitle)
         case .account:
             filterCell.configure(title: "Счёт", value: viewModel.accountTitle)
+        case .sort:
+            filterCell.configure(title: "Сортировка", value: viewModel.sortOption.rawValue)
         case .total:
             filterCell.configure(title: "Сумма", value: formattedTotal)
         }
@@ -431,6 +463,8 @@ extension AnalyticsViewController: UITableViewDelegate {
             showCategoriesPicker()
         case .account:
             showAccountPicker()
+        case .sort:
+            showSortPicker()
         case .total:
             break
         }

@@ -95,6 +95,9 @@ final class AnalyticsViewModel {
     // Пустое множество означает «все статьи», а не «ни одной».
     private(set) var selectedCategoryIDs: Set<Int> = []
     private(set) var selectedAccountID = AnalyticsViewModel.allAccountsID
+    // Тот же набор вариантов, что и в списке операций, — второе такое же
+    // перечисление заводить незачем.
+    private(set) var sortOption: TransactionSort = .dateNewest
 
     // Экран открывается с «Расходов» или «Доходов» — оттуда и начальный тип.
     init(direction: Direction?) {
@@ -225,6 +228,12 @@ final class AnalyticsViewModel {
         selectedAccountID = id
     }
 
+    // Порядок меняется без похода в сеть: данные те же, переставляем на месте.
+    func setSortOption(_ option: TransactionSort) {
+        sortOption = option
+        transactions = sorted(transactions)
+    }
+
     // MARK: - Загрузка
 
     func load() async {
@@ -238,7 +247,7 @@ final class AnalyticsViewModel {
             if accounts.isEmpty {
                 accounts = try await BankAccountsService.shared.bankAccounts()
             }
-            transactions = matchingFilters(try await loadTransactions())
+            transactions = sorted(matchingFilters(try await loadTransactions()))
         } catch {
             // Отменённый запрос — не ошибка: SwiftUI сам гасит задачи экрана.
             if isCancellationError(error) == false {
@@ -278,6 +287,30 @@ final class AnalyticsViewModel {
             combined.append(contentsOf: part)
         }
         return combined
+    }
+
+    // Сортируем один раз при сохранении, а не при отрисовке каждой ячейки:
+    // список ленивый, и сортировка внутри него означала бы пересортировку
+    // на каждую строку.
+    private func sorted(_ transactions: [Transaction]) -> [Transaction] {
+        switch sortOption {
+        case .dateNewest:
+            return transactions.sorted { first, second in
+                first.transactionDate > second.transactionDate
+            }
+        case .dateOldest:
+            return transactions.sorted { first, second in
+                first.transactionDate < second.transactionDate
+            }
+        case .amountDescending:
+            return transactions.sorted { first, second in
+                first.amount > second.amount
+            }
+        case .amountAscending:
+            return transactions.sorted { first, second in
+                first.amount < second.amount
+            }
+        }
     }
 
     // Тип и статьи фильтруем у себя: направление живёт в категории,
