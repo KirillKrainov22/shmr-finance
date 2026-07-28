@@ -37,17 +37,9 @@ struct CategoriesView: View {
             .minimizedSearchBehavior()
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
-                    Button {
+                    ToolbarCloseButton {
                         dismiss()
-                    } label: {
-                        Image(systemName: "xmark")
-                            .font(.system(size: 14, weight: .semibold))
-                            .foregroundStyle(.primary)
-                            .frame(width: 32, height: 32)
-                            .glassCapsule()
                     }
-                    .buttonStyle(.plain)
-                    .accessibilityLabel("Закрыть")
                 }
                 // iOS 26: нативный поиск в нижнем баре, прижат вправо, минимизируется в иконку.
                 if #available(iOS 26, *) {

@@ -57,7 +57,10 @@ struct TransactionsListView: View {
             }
             .errorFeedback(when: viewModel.showError)
             .navigationDestination(isPresented: $showAnalytics) {
-                AnalyticsView()
+                // Свою панель прячем: у экрана аналитики она собственная, из UIKit.
+                AnalyticsView(direction: viewModel.direction)
+                    .toolbar(.hidden, for: .navigationBar)
+                    .ignoresSafeArea()
             }
             .sheet(isPresented: $showSettings) {
                 SettingsView(direction: viewModel.direction)

@@ -72,7 +72,10 @@ struct AccountsView: View {
             // но в полную силу — иначе на тряске её почти не чувствуешь.
             .sensoryFeedback(.impact(flexibility: .soft, intensity: 1), trigger: isBalanceHidden)
             .navigationDestination(isPresented: $showAnalytics) {
-                AnalyticsView()
+                // Пришли не со списка операций — тип операций заранее неизвестен.
+                AnalyticsView(direction: nil)
+                    .toolbar(.hidden, for: .navigationBar)
+                    .ignoresSafeArea()
             }
             .sheet(isPresented: $showSettings) {
                 SettingsView(direction: nil)

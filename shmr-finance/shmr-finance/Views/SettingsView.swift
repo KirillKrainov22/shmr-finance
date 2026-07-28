@@ -43,7 +43,7 @@ struct SettingsView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
-                    closeButton {
+                    ToolbarCloseButton {
                         dismiss()
                     }
                 }
@@ -71,17 +71,6 @@ struct SettingsView: View {
         }
     }
 
-    private func closeButton(action: @escaping () -> Void) -> some View {
-        Button(action: action) {
-            Image(systemName: "xmark")
-                .accessibilityLabel("Закрыть")
-                .font(.system(size: 14, weight: .semibold))
-                .foregroundStyle(.primary)
-                .frame(width: 32, height: 32)
-                .glassCapsule()
-        }
-        .buttonStyle(.plain)
-    }
 }
 
 #Preview {

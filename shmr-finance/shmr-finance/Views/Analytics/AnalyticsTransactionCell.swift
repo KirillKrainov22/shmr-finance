@@ -1,0 +1,103 @@
+import UIKit
+
+// Строка операции: кружок с эмодзи, название статьи с комментарием и сумма.
+// Повторяет строку из списков операций, только собрана на UIKit.
+final class AnalyticsTransactionCell: UITableViewCell {
+
+    static let reuseID = "AnalyticsTransactionCell"
+
+    private let emojiLabel = UILabel()
+    private let emojiCircle = UIView()
+    private let nameLabel = UILabel()
+    private let commentLabel = UILabel()
+    private let amountLabel = UILabel()
+
+    override init(style: UITableViewCell.CellStyle, reuseIdentifier: String?) {
+        super.init(style: style, reuseIdentifier: reuseIdentifier)
+        setUp()
+    }
+
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) не используется — ячейка собирается кодом")
+    }
+
+    func configure(category: Category?, transaction: Transaction) {
+        emojiLabel.text = category.map { category in
+            String(category.emoji)
+        }
+        nameLabel.text = category?.name ?? "Без статьи"
+
+        let comment = transaction.comment?.trimmingCharacters(in: .whitespacesAndNewlines)
+        commentLabel.text = comment
+        commentLabel.isHidden = comment?.isEmpty ?? true
+
+        amountLabel.text = transaction.amount.formatted(
+            .currency(code: "RUB")
+                .precision(.fractionLength(0...2))
+                .locale(Locale(identifier: "ru_RU"))
+        )
+
+        // Строка читается одной фразой, а не тремя остановками подряд.
+        isAccessibilityElement = true
+        accessibilityLabel = [nameLabel.text, comment, amountLabel.text]
+            .compactMap { text in
+                text
+            }
+            .filter { text in
+                text.isEmpty == false
+            }
+            .joined(separator: ", ")
+    }
+
+    private func setUp() {
+        selectionStyle = .none
+
+        emojiLabel.font = .systemFont(ofSize: 16)
+        emojiLabel.textAlignment = .center
+        emojiLabel.translatesAutoresizingMaskIntoConstraints = false
+
+        emojiCircle.layer.cornerRadius = 20
+        emojiCircle.layer.borderWidth = 1
+        emojiCircle.layer.borderColor = UIColor.separator.cgColor
+        emojiCircle.translatesAutoresizingMaskIntoConstraints = false
+        emojiCircle.addSubview(emojiLabel)
+
+        nameLabel.font = .preferredFont(forTextStyle: .body)
+        nameLabel.adjustsFontForContentSizeCategory = true
+        nameLabel.textColor = .label
+
+        commentLabel.font = .preferredFont(forTextStyle: .footnote)
+        commentLabel.adjustsFontForContentSizeCategory = true
+        commentLabel.textColor = .secondaryLabel
+
+        amountLabel.font = .preferredFont(forTextStyle: .body)
+        amountLabel.adjustsFontForContentSizeCategory = true
+        amountLabel.textColor = .label
+        amountLabel.textAlignment = .right
+        amountLabel.setContentHuggingPriority(.required, for: .horizontal)
+        amountLabel.setContentCompressionResistancePriority(.required, for: .horizontal)
+
+        let textStack = UIStackView(arrangedSubviews: [nameLabel, commentLabel])
+        textStack.axis = .vertical
+        textStack.spacing = 2
+
+        let rowStack = UIStackView(arrangedSubviews: [emojiCircle, textStack, amountLabel])
+        rowStack.axis = .horizontal
+        rowStack.alignment = .center
+        rowStack.spacing = 12
+        rowStack.translatesAutoresizingMaskIntoConstraints = false
+        contentView.addSubview(rowStack)
+
+        NSLayoutConstraint.activate([
+            emojiCircle.widthAnchor.constraint(equalToConstant: 40),
+            emojiCircle.heightAnchor.constraint(equalToConstant: 40),
+            emojiLabel.centerXAnchor.constraint(equalTo: emojiCircle.centerXAnchor),
+            emojiLabel.centerYAnchor.constraint(equalTo: emojiCircle.centerYAnchor),
+
+            rowStack.leadingAnchor.constraint(equalTo: contentView.layoutMarginsGuide.leadingAnchor),
+            rowStack.trailingAnchor.constraint(equalTo: contentView.layoutMarginsGuide.trailingAnchor),
+            rowStack.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 12),
+            rowStack.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -12)
+        ])
+    }
+}
