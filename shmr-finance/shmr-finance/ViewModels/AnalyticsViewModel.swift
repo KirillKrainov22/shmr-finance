@@ -196,14 +196,24 @@ final class AnalyticsViewModel {
         startDate = calendar.date(byAdding: offset.component, value: offset.value, to: today) ?? today
     }
 
+    // Границы подтягивают друг друга: период не может быть вывернут наизнанку.
+    // Двигаем ту границу, которую пользователь сейчас не трогает, — иначе
+    // его же правка отменилась бы у него на глазах.
+
     func setStartDate(_ date: Date) {
         startDate = Calendar.current.startOfDay(for: date)
+        if startDate > endDate {
+            endDate = startDate
+        }
         // Даты задали руками — период больше не «за месяц».
         periodPreset = .custom
     }
 
     func setEndDate(_ date: Date) {
         endDate = Calendar.current.startOfDay(for: date)
+        if endDate < startDate {
+            startDate = endDate
+        }
         periodPreset = .custom
     }
 
