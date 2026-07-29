@@ -167,10 +167,14 @@ final class AnalyticsViewController: UIViewController {
             spinner.stopAnimating()
         }
 
-        chartView.entities = viewModel.totalsByCategory.map { item in
+        let entities = viewModel.totalsByCategory.map { item in
             Entity(value: item.value, label: item.label)
         }
-        layoutChartHeader()
+        // Высоту пересчитываем в середине анимации: содержимое уже новое,
+        // но ещё невидимо, и смена высоты в глаза не бросается.
+        chartView.setEntities(entities, animated: true) { [weak self] in
+            self?.layoutChartHeader()
+        }
 
         tableView.reloadData()
     }

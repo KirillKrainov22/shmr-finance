@@ -8,6 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		86C87A443018F88C0048A136 /* PieChart in Frameworks */ = {isa = PBXBuildFile; productRef = 86C87A433018F88C0048A136 /* PieChart */; };
+		86F88D3930198C6A0092A7A2 /* PieChart in Frameworks */ = {isa = PBXBuildFile; productRef = 86F88D3830198C6A0092A7A2 /* PieChart */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -59,6 +60,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				86F88D3930198C6A0092A7A2 /* PieChart in Frameworks */,
 				86C87A443018F88C0048A136 /* PieChart in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -124,6 +126,7 @@
 			name = "shmr-finance";
 			packageProductDependencies = (
 				86C87A433018F88C0048A136 /* PieChart */,
+				86F88D3830198C6A0092A7A2 /* PieChart */,
 			);
 			productName = "shmr-finance";
 			productReference = 86830DC73007BA9600A0C704 /* shmr-finance.app */;
@@ -208,7 +211,7 @@
 			mainGroup = 86830DBE3007BA9600A0C704;
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
-				86C87A423018F88C0048A136 /* XCLocalSwiftPackageReference "../../дзшмр/Utilities" */,
+				86F88D3730198C6A0092A7A2 /* XCLocalSwiftPackageReference "Utilities" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 86830DC83007BA9600A0C704 /* Products */;
@@ -595,14 +598,18 @@
 /* End XCConfigurationList section */
 
 /* Begin XCLocalSwiftPackageReference section */
-		86C87A423018F88C0048A136 /* XCLocalSwiftPackageReference "../../дзшмр/Utilities" */ = {
+		86F88D3730198C6A0092A7A2 /* XCLocalSwiftPackageReference "Utilities" */ = {
 			isa = XCLocalSwiftPackageReference;
-			relativePath = "../../дзшмр/Utilities";
+			relativePath = Utilities;
 		};
 /* End XCLocalSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
 		86C87A433018F88C0048A136 /* PieChart */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = PieChart;
+		};
+		86F88D3830198C6A0092A7A2 /* PieChart */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = PieChart;
 		};
