@@ -9,6 +9,7 @@
 /* Begin PBXBuildFile section */
 		86C87A443018F88C0048A136 /* PieChart in Frameworks */ = {isa = PBXBuildFile; productRef = 86C87A433018F88C0048A136 /* PieChart */; };
 		86F88D3930198C6A0092A7A2 /* PieChart in Frameworks */ = {isa = PBXBuildFile; productRef = 86F88D3830198C6A0092A7A2 /* PieChart */; };
+		86F88D3C301A43FC0092A7A2 /* Lottie in Frameworks */ = {isa = PBXBuildFile; productRef = 86F88D3B301A43FC0092A7A2 /* Lottie */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -62,6 +63,7 @@
 			files = (
 				86F88D3930198C6A0092A7A2 /* PieChart in Frameworks */,
 				86C87A443018F88C0048A136 /* PieChart in Frameworks */,
+				86F88D3C301A43FC0092A7A2 /* Lottie in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -127,6 +129,7 @@
 			packageProductDependencies = (
 				86C87A433018F88C0048A136 /* PieChart */,
 				86F88D3830198C6A0092A7A2 /* PieChart */,
+				86F88D3B301A43FC0092A7A2 /* Lottie */,
 			);
 			productName = "shmr-finance";
 			productReference = 86830DC73007BA9600A0C704 /* shmr-finance.app */;
@@ -212,6 +215,7 @@
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
 				86F88D3730198C6A0092A7A2 /* XCLocalSwiftPackageReference "Utilities" */,
+				86F88D3A301A43FC0092A7A2 /* XCRemoteSwiftPackageReference "lottie-ios" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 86830DC83007BA9600A0C704 /* Products */;
@@ -604,6 +608,17 @@
 		};
 /* End XCLocalSwiftPackageReference section */
 
+/* Begin XCRemoteSwiftPackageReference section */
+		86F88D3A301A43FC0092A7A2 /* XCRemoteSwiftPackageReference "lottie-ios" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/airbnb/lottie-ios";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 4.6.1;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
 /* Begin XCSwiftPackageProductDependency section */
 		86C87A433018F88C0048A136 /* PieChart */ = {
 			isa = XCSwiftPackageProductDependency;
@@ -612,6 +627,11 @@
 		86F88D3830198C6A0092A7A2 /* PieChart */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = PieChart;
+		};
+		86F88D3B301A43FC0092A7A2 /* Lottie */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 86F88D3A301A43FC0092A7A2 /* XCRemoteSwiftPackageReference "lottie-ios" */;
+			productName = Lottie;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};
