@@ -5,14 +5,22 @@ struct BalanceCorrectionView: View {
 
     let account: BankAccount
     let onConfirm: (Decimal) -> Void
+    // Возвращает true, если удаление прошло — только тогда закрываем шторку.
+    let onDelete: () async -> Bool
 
     @Environment(\.dismiss) private var dismiss
     @State private var amountText: String
     @State private var date = Date()
+    @State private var deletedCount = 0
 
-    init(account: BankAccount, onConfirm: @escaping (Decimal) -> Void) {
+    init(
+        account: BankAccount,
+        onConfirm: @escaping (Decimal) -> Void,
+        onDelete: @escaping () async -> Bool
+    ) {
         self.account = account
         self.onConfirm = onConfirm
+        self.onDelete = onDelete
         _amountText = State(initialValue: "\(account.balance)")
     }
 
@@ -24,6 +32,23 @@ struct BalanceCorrectionView: View {
                 infoRow(title: "Дата и время", value: dateText)
                 Divider()
                 infoRow(title: "Валюта", value: currencyName)
+
+                Divider()
+                Button(role: .destructive) {
+                    Task {
+                        // Закрываем шторку только если удаление прошло успешно:
+                        // иначе пользователь не увидит, что помешало.
+                        if await onDelete() {
+                            deletedCount += 1
+                            dismiss()
+                        }
+                    }
+                } label: {
+                    Text("Удалить счёт")
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(.horizontal, 16)
+                        .padding(.vertical, 14)
+                }
 
                 Spacer()
             }
@@ -43,6 +68,8 @@ struct BalanceCorrectionView: View {
                     }
                 }
             }
+            // Удаление — не успех, а исчезновение объекта, поэтому обычный удар.
+            .sensoryFeedback(.impact(weight: .medium, intensity: 1), trigger: deletedCount)
             .presentationDetents([.medium, .large])
         }
         .presentationBackground(Color(.systemBackground)) // белый фон, как у формы операции

@@ -84,14 +84,24 @@ struct AccountsView: View {
                 datePickerSheet
             }
             .sheet(item: $accountToCorrect) { account in
-                BalanceCorrectionView(account: account) { newBalance in
-                    Task {
-                        await viewModel.updateBalance(of: account, to: newBalance)
+                BalanceCorrectionView(
+                    account: account,
+                    onConfirm: { newBalance in
+                        Task {
+                            await viewModel.updateBalance(of: account, to: newBalance)
+                        }
+                    },
+                    onDelete: {
+                        await viewModel.deleteAccount(id: account.id)
                     }
-                }
+                )
             }
             .sheet(isPresented: $showAddAccount) {
-                Text("Добавление счёта (заглушка)")
+                AccountEditView {
+                    Task {
+                        await viewModel.load()
+                    }
+                }
             }
             // Грузит при появлении и заново при каждой смене даты.
             .task(id: viewModel.selectedDate) {

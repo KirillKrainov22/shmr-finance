@@ -114,6 +114,36 @@ final class BankAccountsViewModel {
         }
     }
 
+    // Удаление счёта. Возвращает true при успехе — форма закрывается только тогда.
+    @discardableResult
+    func deleteAccount(id: Int) async -> Bool {
+        isLoading = true
+        defer {
+            isLoading = false
+        }
+
+        do {
+            try await service.deleteAccount(id: id)
+            accounts = try await service.bankAccounts()
+            service.selectedAccount(among: accounts)
+            await loadRollback()
+            return true
+        } catch {
+            guard isCancellationError(error) == false else {
+                return false
+            }
+            // Бэкенд не даёт удалить счёт с операциями. Общий текст про отказ
+            // сервера тут ничего не объясняет, поэтому разбираем этот случай.
+            if isConflictError(error) {
+                errorMessage = "Сначала удалите операции по этому счёту."
+            } else {
+                errorMessage = userErrorMessage(from: error)
+            }
+            showError = true
+            return false
+        }
+    }
+
     // Бэкенд хранит только текущий баланс, истории по операциям у него нет.
     // Поэтому баланс на прошлую дату считаем сами: берём текущий и вычитаем
     // всё, что произошло после конца выбранного дня.
