@@ -59,6 +59,15 @@ public final class PieChartView: UIView {
         addSubview(ringView)
         addSubview(centerTextView)
         addSubview(legendView)
+
+        // Размер системного шрифта поменяли в настройках — надписи считаются
+        // при отрисовке, поэтому достаточно попросить перерисоваться.
+        registerForTraitChanges([UITraitPreferredContentSizeCategory.self]) { (view: PieChartView, _) in
+            view.centerTextView.setNeedsDisplay()
+            view.legendView.setNeedsDisplay()
+            view.invalidateIntrinsicContentSize()
+            view.setNeedsLayout()
+        }
     }
 
     public required init?(coder: NSCoder) {
@@ -90,11 +99,35 @@ public final class PieChartView: UIView {
         let segments = Self.segments(for: entities)
         ringView.segments = segments
         legendView.segments = segments
-        centerTextView.total = segments.reduce(Decimal(0)) { partialSum, segment in
+        let total = segments.reduce(Decimal(0)) { partialSum, segment in
             partialSum + segment.value
         }
+        centerTextView.total = total
+
+        // Диаграмма — картинка, и без подписи VoiceOver про неё сказать нечего.
+        // Проговариваем то же, что видно глазами: сумму и доли по статьям.
+        isAccessibilityElement = true
+        accessibilityLabel = Self.accessibilityDescription(segments: segments, total: total)
+
         invalidateIntrinsicContentSize()
         setNeedsLayout()
+    }
+
+    private static func accessibilityDescription(segments: [PieChartSegment], total: Decimal) -> String {
+        let formatter = PieChartColors.currencyFormatter
+        let totalText = formatter.string(from: total as NSDecimalNumber) ?? ""
+
+        guard segments.isEmpty == false else {
+            return "Диаграмма по статьям. Нет данных за период."
+        }
+
+        let parts = segments.map { segment in
+            let amount = formatter.string(from: segment.value as NSDecimalNumber) ?? ""
+            let percent = Int((segment.fraction * 100).rounded())
+            return "\(segment.label): \(amount), \(percent)%"
+        }
+        return "Диаграмма по статьям. Всего за период \(totalText). "
+            + parts.joined(separator: ". ")
     }
 
     // MARK: - Смена состояния с анимацией
@@ -367,14 +400,14 @@ private final class CenterTextView: UIView {
         let title = NSAttributedString(
             string: "Всего за период",
             attributes: [
-                .font: UIFont.systemFont(ofSize: 14, weight: .medium),
+                .font: PieChartColors.centerTitleFont,
                 .foregroundColor: PieChartColors.secondaryText
             ]
         )
         let amount = NSAttributedString(
             string: PieChartColors.currencyFormatter.string(from: total as NSDecimalNumber) ?? "",
             attributes: [
-                .font: PieChartColors.roundedFont(size: 28, weight: .bold),
+                .font: PieChartColors.centerAmountFont,
                 .foregroundColor: PieChartColors.primaryText
             ]
         )
@@ -474,7 +507,7 @@ private final class LegendView: UIView {
             return ([], 0, 0)
         }
 
-        let font = UIFont.systemFont(ofSize: 14, weight: .medium)
+        let font = PieChartColors.legendFont
         var lineHeight = PieChartMetrics.legendDot
         var result: [[Item]] = []
         var current: [Item] = []
@@ -523,6 +556,29 @@ enum PieChartColors {
 
     static let secondaryText = UIColor(red: 0.286, green: 0.271, blue: 0.310, alpha: 1) // #49454F
     static let primaryText = UIColor(red: 0.114, green: 0.106, blue: 0.126, alpha: 1)   // #1D1B20
+
+    // Размеры взяты из макета, поэтому семантические стили не используем —
+    // они увели бы диаграмму от него. Вместо этого масштабируем сами,
+    // с потолком: без него крупный системный шрифт выгнал бы сумму за кольцо.
+    static func scaled(_ font: UIFont, style: UIFont.TextStyle, maximum: CGFloat) -> UIFont {
+        UIFontMetrics(forTextStyle: style).scaledFont(for: font, maximumPointSize: maximum)
+    }
+
+    static var legendFont: UIFont {
+        scaled(
+            UIFont.systemFont(ofSize: 14, weight: .medium),
+            style: .footnote,
+            maximum: 20
+        )
+    }
+
+    static var centerTitleFont: UIFont {
+        legendFont
+    }
+
+    static var centerAmountFont: UIFont {
+        scaled(roundedFont(size: 28, weight: .bold), style: .title2, maximum: 34)
+    }
 
     static func roundedFont(size: CGFloat, weight: UIFont.Weight) -> UIFont {
         let base = UIFont.systemFont(ofSize: size, weight: weight)

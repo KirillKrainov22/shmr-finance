@@ -52,8 +52,13 @@ final class AnalyticsDetailCell: UITableViewCell {
         dot.translatesAutoresizingMaskIntoConstraints = false
 
         let secondary = UIColor(red: 0.286, green: 0.271, blue: 0.310, alpha: 1)
+        // Размер из макета, но растёт вместе с системным шрифтом.
+        let font = UIFontMetrics(forTextStyle: .callout).scaledFont(
+            for: .systemFont(ofSize: 16, weight: .medium)
+        )
         for label in [nameLabel, amountLabel, percentLabel] {
-            label.font = .systemFont(ofSize: 16, weight: .medium)
+            label.font = font
+            label.adjustsFontForContentSizeCategory = true
             label.textColor = secondary
         }
         amountLabel.setContentHuggingPriority(.required, for: .horizontal)

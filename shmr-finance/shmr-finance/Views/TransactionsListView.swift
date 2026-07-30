@@ -37,6 +37,17 @@ struct TransactionsListView: View {
                 }
                 .listStyle(.plain)
                 .scrollContentBackground(.hidden) // прячем белый фон списка, чтобы был виден фон экрана
+                // Пустой список без подписи читается как «не загрузилось».
+                // Во время загрузки молчим — там свой индикатор.
+                .overlay {
+                    if viewModel.sortedTransactions.isEmpty, viewModel.isLoading == false {
+                        Text(emptyText)
+                            .scaledFont(size: 15)
+                            .foregroundStyle(.secondary)
+                            .multilineTextAlignment(.center)
+                            .padding(.horizontal, 32)
+                    }
+                }
             }
             .background(backgroundColor)
             .environment(\.locale, Locale(identifier: "ru_RU")) // ₽ и русские даты на всём экране
@@ -243,6 +254,15 @@ struct TransactionsListView: View {
         }
         .padding(16)
         .accessibilityLabel("Добавить операцию")
+    }
+
+    private var emptyText: String {
+        switch viewModel.direction {
+        case .income:
+            return "Нет доходов за выбранный день"
+        case .outcome:
+            return "Нет расходов за выбранный день"
+        }
     }
 
     private var totalLabel: String {

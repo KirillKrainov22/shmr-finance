@@ -52,7 +52,12 @@ final class AnalyticsTransactionCell: UITableViewCell {
     private func setUp() {
         selectionStyle = .none
 
-        emojiLabel.font = .systemFont(ofSize: 16)
+        // Потолок 22: выше эмодзи перестанет помещаться в кружок 40×40.
+        emojiLabel.font = UIFontMetrics(forTextStyle: .body).scaledFont(
+            for: .systemFont(ofSize: 16),
+            maximumPointSize: 22
+        )
+        emojiLabel.adjustsFontForContentSizeCategory = true
         emojiLabel.textAlignment = .center
         emojiLabel.translatesAutoresizingMaskIntoConstraints = false
 

@@ -82,7 +82,11 @@ final class AnalyticsViewController: UIViewController {
         // Обычный title навбар ставит по центру, а в макете он прижат влево.
         let titleLabel = UILabel()
         titleLabel.text = "Аналитика"
-        titleLabel.font = .systemFont(ofSize: 20, weight: .semibold)
+        titleLabel.font = UIFontMetrics(forTextStyle: .title3).scaledFont(
+            for: .systemFont(ofSize: 20, weight: .semibold),
+            maximumPointSize: 26 // выше панель начнёт распирать
+        )
+        titleLabel.adjustsFontForContentSizeCategory = true
         titleLabel.textColor = .label
         titleLabel.accessibilityTraits = .header
 
@@ -124,9 +128,8 @@ final class AnalyticsViewController: UIViewController {
                 action: #selector(chartTapped)
             )
         )
-        chartView.accessibilityLabel = "Диаграмма расходов по статьям"
+        // Подпись диаграмма составляет сама из своих данных — здесь только подсказка.
         chartView.accessibilityHint = "Дважды коснитесь, чтобы открыть детализацию"
-        chartView.isAccessibilityElement = true
     }
 
     @objc
@@ -428,6 +431,12 @@ extension AnalyticsViewController: UITableViewDataSource {
         case .filters:
             return FilterRow.allCases.count
         case .transactions:
+            // Пока грузим — строк нет, работает спиннер. Загрузились и пусто —
+            // одна строка с объяснением, иначе под фильтрами просто пустота
+            // и непонятно, то ли не загрузилось, то ли операций правда нет.
+            if viewModel.transactions.isEmpty {
+                return viewModel.isLoading ? 0 : 1
+            }
             return viewModel.transactions.count
         case nil:
             return 0
@@ -483,6 +492,10 @@ extension AnalyticsViewController: UITableViewDataSource {
     }
 
     private func transactionCell(at indexPath: IndexPath) -> UITableViewCell {
+        guard viewModel.transactions.isEmpty == false else {
+            return emptyCell()
+        }
+
         let cell = tableView.dequeueReusableCell(
             withIdentifier: AnalyticsTransactionCell.reuseID,
             for: indexPath
@@ -497,6 +510,17 @@ extension AnalyticsViewController: UITableViewDataSource {
             transaction: transaction
         )
         return transactionCell
+    }
+
+    private func emptyCell() -> UITableViewCell {
+        let cell = UITableViewCell()
+        var content = cell.defaultContentConfiguration()
+        content.text = "Нет операций за выбранный период"
+        content.textProperties.color = .secondaryLabel
+        content.textProperties.alignment = .center
+        cell.contentConfiguration = content
+        cell.selectionStyle = .none
+        return cell
     }
 
 }
