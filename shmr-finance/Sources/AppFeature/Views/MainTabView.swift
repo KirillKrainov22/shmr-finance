@@ -1,7 +1,11 @@
 import SwiftUI
 
 // Корневой экран приложения — таб-бар с тремя вкладками.
-struct MainTabView: View {
+// Единственный публичный тип модуля: его показывает точка входа,
+// которая живёт снаружи, в Xcode-проекте.
+public struct MainTabView: View {
+
+    public init() {}
 
     private enum Tab {
         case expenses
@@ -24,7 +28,7 @@ struct MainTabView: View {
         isStorageReady && isSplashFinished
     }
 
-    var body: some View {
+    public var body: some View {
         Group {
             if isReady {
                 tabs
