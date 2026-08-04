@@ -35,6 +35,16 @@ func userErrorMessage(from error: Error) -> String {
     return "Что-то пошло не так. Попробуйте ещё раз."
 }
 
+// Сервер отказал по конфликту. Единственный случай в нашем API — попытка
+// удалить счёт, по которому есть операции. Общий текст про «не смог обработать»
+// тут бесполезен: пользователю нужно знать, что именно мешает.
+func isConflictError(_ error: Error) -> Bool {
+    guard case NetworkError.httpError(let statusCode) = error else {
+        return false
+    }
+    return statusCode == 409
+}
+
 // Обрыв связи, а не отказ сервера. Откладывать в бэкап имеет смысл только такие ошибки:
 // 400 или 404 повторной отправкой не исправить, они будут висеть в очереди вечно.
 func isOfflineError(_ error: Error) -> Bool {

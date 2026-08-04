@@ -34,17 +34,9 @@ struct AccountPickerView: View {
             .environment(\.locale, Locale(identifier: "ru_RU"))
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
-                    Button {
+                    ToolbarCloseButton {
                         dismiss()
-                    } label: {
-                        Image(systemName: "xmark")
-                            .font(.system(size: 14, weight: .semibold))
-                            .foregroundStyle(.primary)
-                            .frame(width: 32, height: 32)
-                            .glassCapsule()
                     }
-                    .buttonStyle(.plain)
-                    .accessibilityLabel("Закрыть")
                 }
             }
             .task {

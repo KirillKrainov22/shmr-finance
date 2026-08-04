@@ -7,6 +7,9 @@ protocol BankAccountsStorage: Sendable {
     func getAll() async throws -> [BankAccount]
     func update(_ account: BankAccount) async throws
     func save(_ accounts: [BankAccount]) async throws
+    // save работает upsert-ом, поэтому удалённый счёт сам из кеша не исчезнет —
+    // без этого метода он остался бы там навсегда и всплывал офлайн.
+    func delete(id: Int) async throws
     // Нужен при смене движка хранения: старую базу после переноса чистим.
     func clear() async throws
 }
@@ -72,6 +75,14 @@ actor SwiftDataBankAccountsStorage: BankAccountsStorage {
         for account in accounts {
             try upsert(account)
         }
+        try modelContext.save()
+    }
+
+    func delete(id: Int) throws {
+        guard let existing = try entity(id: id) else {
+            return
+        }
+        modelContext.delete(existing)
         try modelContext.save()
     }
 

@@ -1,7 +1,11 @@
 import SwiftUI
 
 // Корневой экран приложения — таб-бар с тремя вкладками.
-struct MainTabView: View {
+// Единственный публичный тип модуля: его показывает точка входа,
+// которая живёт снаружи, в Xcode-проекте.
+public struct MainTabView: View {
+
+    public init() {}
 
     private enum Tab {
         case expenses
@@ -15,25 +19,43 @@ struct MainTabView: View {
     // они успели бы прочитать старое.
     @State private var isStorageReady = false
 
+    // По ТЗ интерфейс появляется только после того, как заставка доиграла.
+    @State private var isSplashFinished = false
+
     @State private var selectedTab = Tab.expenses
 
-    var body: some View {
+    private var isReady: Bool {
+        isStorageReady && isSplashFinished
+    }
+
+    public var body: some View {
         Group {
-            if isStorageReady {
+            if isReady {
                 tabs
             } else {
-                ProgressView()
-                    .controlSize(.large)
+                splash
             }
         }
-        // Миграция на старте приложения. Если движок хранения не менялся,
-        // управление возвращается сразу и подмены экрана не видно.
+        .animation(.easeInOut(duration: 0.25), value: isReady)
+        // Миграция идёт параллельно с заставкой: ждать её отдельно незачем,
+        // всё равно стоим на анимации. Раньше здесь крутился спиннер.
         .task {
             await LocalStorages.migrateIfNeeded()
             isStorageReady = true
         }
         // Приложение всегда в светлой теме, даже если на телефоне включена тёмная.
         .preferredColorScheme(.light)
+    }
+
+    private var splash: some View {
+        SplashView(name: "splash_animation") {
+            isSplashFinished = true
+        }
+        .padding(40)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(Color.white)
+        .ignoresSafeArea()
+        .transition(.opacity)
     }
 
     private var tabs: some View {

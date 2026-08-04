@@ -72,7 +72,10 @@ struct AccountsView: View {
             // но в полную силу — иначе на тряске её почти не чувствуешь.
             .sensoryFeedback(.impact(flexibility: .soft, intensity: 1), trigger: isBalanceHidden)
             .navigationDestination(isPresented: $showAnalytics) {
-                AnalyticsView()
+                // Пришли не со списка операций — тип операций заранее неизвестен.
+                AnalyticsView(direction: nil)
+                    .toolbar(.hidden, for: .navigationBar)
+                    .ignoresSafeArea()
             }
             .sheet(isPresented: $showSettings) {
                 SettingsView(direction: nil)
@@ -81,14 +84,24 @@ struct AccountsView: View {
                 datePickerSheet
             }
             .sheet(item: $accountToCorrect) { account in
-                BalanceCorrectionView(account: account) { newBalance in
-                    Task {
-                        await viewModel.updateBalance(of: account, to: newBalance)
+                BalanceCorrectionView(
+                    account: account,
+                    onConfirm: { newBalance in
+                        Task {
+                            await viewModel.updateBalance(of: account, to: newBalance)
+                        }
+                    },
+                    onDelete: {
+                        await viewModel.deleteAccount(id: account.id)
                     }
-                }
+                )
             }
             .sheet(isPresented: $showAddAccount) {
-                Text("Добавление счёта (заглушка)")
+                AccountEditView {
+                    Task {
+                        await viewModel.load()
+                    }
+                }
             }
             // Грузит при появлении и заново при каждой смене даты.
             .task(id: viewModel.selectedDate) {

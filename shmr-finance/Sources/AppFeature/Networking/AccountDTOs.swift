@@ -22,6 +22,22 @@ struct AccountDTO: Decodable {
     }
 }
 
+// Тело POST /accounts. Отдельно от DTO обновления: там нет эмодзи,
+// а при создании его как раз задаёт пользователь.
+struct AccountCreateRequestDTO: Encodable {
+    let name: String
+    let emoji: String
+    let balance: String
+    let currency: String
+
+    init(name: String, emoji: String, balance: Decimal, currency: String) {
+        self.name = name
+        self.emoji = emoji
+        self.balance = NSDecimalNumber(decimal: balance).stringValue
+        self.currency = currency
+    }
+}
+
 // Тело PUT /accounts/{id}.
 struct AccountUpdateRequestDTO: Encodable {
     let name: String

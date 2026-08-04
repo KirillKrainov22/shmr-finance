@@ -87,6 +87,21 @@ final class CoreDataBankAccountsStorage: BankAccountsStorage, @unchecked Sendabl
         }
     }
 
+    func delete(id: Int) async throws {
+        let context = stack.context
+        try await context.perform {
+            guard let existing = try context.fetchOne(
+                CDBankAccount.self,
+                entityName: CDBankAccount.entityName,
+                id: id
+            ) else {
+                return
+            }
+            context.delete(existing)
+            try context.save()
+        }
+    }
+
     func clear() async throws {
         let context = stack.context
         try await context.perform {

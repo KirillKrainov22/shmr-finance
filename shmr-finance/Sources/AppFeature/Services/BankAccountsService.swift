@@ -81,6 +81,46 @@ final class BankAccountsService {
         SelectedAccountStore.shared.select(id: id)
     }
 
+    // Создание счёта требует сети. Офлайн-очереди для него нет намеренно:
+    // id новому счёту выдаёт сервер, а на него ссылаются операции — без
+    // настоящего id отложенное создание тянуло бы за собой подмену ссылок
+    // во всём бэкапе.
+    @discardableResult
+    func createAccount(name: String, emoji: String, balance: Decimal, currency: String) async throws -> BankAccount? {
+        let dto: AccountDTO = try await client.request(
+            path: "accounts",
+            method: "POST",
+            body: AccountCreateRequestDTO(
+                name: name,
+                emoji: emoji,
+                balance: balance,
+                currency: currency
+            )
+        )
+
+        guard let created = dto.toDomain() else {
+            return nil
+        }
+        try? await storage?.save([created])
+        // Новый счёт сразу становится выбранным: пользователь его только что
+        // завёл, логично показывать операции по нему.
+        SelectedAccountStore.shared.select(id: created.id)
+        return created
+    }
+
+    // Удаление счёта. Как и создание, требует сети: офлайн-очередь пришлось бы
+    // синхронизировать с очередью операций этого же счёта.
+    func deleteAccount(id: Int) async throws {
+        try await client.requestNoResponse(
+            path: "accounts/\(id)",
+            method: "DELETE"
+        )
+        try? await storage?.delete(id: id)
+        try? await backup?.remove(ids: [id])
+        // Выбор специально не переставляем: если удалили выбранный счёт,
+        // selectedAccount() не найдёт его в списке и сам возьмёт первый.
+    }
+
     @discardableResult
     func updateAccount(_ account: BankAccount) async throws -> BankAccount? {
         do {

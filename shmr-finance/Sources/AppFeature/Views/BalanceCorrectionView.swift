@@ -5,14 +5,22 @@ struct BalanceCorrectionView: View {
 
     let account: BankAccount
     let onConfirm: (Decimal) -> Void
+    // Возвращает true, если удаление прошло — только тогда закрываем шторку.
+    let onDelete: () async -> Bool
 
     @Environment(\.dismiss) private var dismiss
     @State private var amountText: String
     @State private var date = Date()
+    @State private var deletedCount = 0
 
-    init(account: BankAccount, onConfirm: @escaping (Decimal) -> Void) {
+    init(
+        account: BankAccount,
+        onConfirm: @escaping (Decimal) -> Void,
+        onDelete: @escaping () async -> Bool
+    ) {
         self.account = account
         self.onConfirm = onConfirm
+        self.onDelete = onDelete
         _amountText = State(initialValue: "\(account.balance)")
     }
 
@@ -25,6 +33,23 @@ struct BalanceCorrectionView: View {
                 Divider()
                 infoRow(title: "Валюта", value: currencyName)
 
+                Divider()
+                Button(role: .destructive) {
+                    Task {
+                        // Закрываем шторку только если удаление прошло успешно:
+                        // иначе пользователь не увидит, что помешало.
+                        if await onDelete() {
+                            deletedCount += 1
+                            dismiss()
+                        }
+                    }
+                } label: {
+                    Text("Удалить счёт")
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(.horizontal, 16)
+                        .padding(.vertical, 14)
+                }
+
                 Spacer()
             }
             .environment(\.locale, Locale(identifier: "ru_RU"))
@@ -33,16 +58,18 @@ struct BalanceCorrectionView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    circleToolbarButton(systemName: "xmark", label: "Закрыть", foreground: .primary, background: Color(.systemGray5)) {
+                    ToolbarCloseButton {
                         dismiss()
                     }
                 }
                 ToolbarItem(placement: .confirmationAction) {
-                    circleToolbarButton(systemName: "checkmark", label: "Сохранить", foreground: .white, background: .accentColor) {
+                    ToolbarConfirmButton(label: "Сохранить") {
                         confirm()
                     }
                 }
             }
+            // Удаление — не успех, а исчезновение объекта, поэтому обычный удар.
+            .sensoryFeedback(.impact(weight: .medium, intensity: 1), trigger: deletedCount)
             .presentationDetents([.medium, .large])
         }
         .presentationBackground(Color(.systemBackground)) // белый фон, как у формы операции
@@ -86,24 +113,6 @@ struct BalanceCorrectionView: View {
         .padding(.vertical, 14)
     }
 
-    private func circleToolbarButton(
-        systemName: String,
-        label: String,
-        foreground: Color,
-        background: Color,
-        action: @escaping () -> Void
-    ) -> some View {
-        Button(action: action) {
-            Image(systemName: systemName)
-                .font(.system(size: 14, weight: .semibold))
-                .foregroundStyle(foreground)
-                .frame(width: 32, height: 32)
-                .background(Circle().fill(background))
-        }
-        .buttonStyle(.plain)
-        // Кнопка без текста — без подписи VoiceOver прочитает служебное имя значка.
-        .accessibilityLabel(label)
-    }
 
     private func confirm() {
         let normalized = amountText.replacingOccurrences(of: ",", with: ".")
