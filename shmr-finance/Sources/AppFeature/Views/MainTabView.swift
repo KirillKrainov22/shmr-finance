@@ -40,6 +40,9 @@ public struct MainTabView: View {
         // Миграция идёт параллельно с заставкой: ждать её отдельно незачем,
         // всё равно стоим на анимации. Раньше здесь крутился спиннер.
         .task {
+            // Слушать уход в фон начинаем сразу: приложение можно свернуть
+            // и на заставке.
+            AppSwitcherBlur.shared.start()
             await LocalStorages.migrateIfNeeded()
             isStorageReady = true
         }
