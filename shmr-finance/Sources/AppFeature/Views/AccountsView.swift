@@ -70,7 +70,11 @@ struct AccountsView: View {
             .errorFeedback(when: viewModel.showError)
             // Баланс прячется мягкой анимацией, поэтому и отдача мягкая по характеру,
             // но в полную силу — иначе на тряске её почти не чувствуешь.
-            .sensoryFeedback(.impact(flexibility: .soft, intensity: 1), trigger: isBalanceHidden)
+            .hapticFeedback(.impact(flexibility: .soft, intensity: 1), trigger: isBalanceHidden)
+            // Та же отдача, что у кнопки добавления операции, — жест один и тот же.
+            .hapticFeedback(trigger: showAddAccount) { _, isShowing in
+                isShowing ? .impact(weight: .light, intensity: 1) : nil
+            }
             .navigationDestination(isPresented: $showAnalytics) {
                 // Пришли не со списка операций — тип операций заранее неизвестен.
                 AnalyticsView(direction: nil)

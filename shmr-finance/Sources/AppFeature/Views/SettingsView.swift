@@ -8,6 +8,8 @@ struct SettingsView: View {
     @Environment(\.dismiss) private var dismiss
     @State private var showCategories = false
 
+    @Bindable private var haptics = HapticsSettings.shared
+
     var body: some View {
         NavigationStack {
             List {
@@ -27,6 +29,7 @@ struct SettingsView: View {
                 Section {
                     stubRow("Тема оформления")
                     stubRow("Язык")
+                    Toggle("Тактильная отдача", isOn: $haptics.isEnabled)
                 } header: {
                     Text("Интерфейс").textCase(nil)
                 }
@@ -51,6 +54,9 @@ struct SettingsView: View {
             .sheet(isPresented: $showCategories) {
                 CategoriesView(direction: direction)
             }
+            // Включили — сразу даём почувствовать, что именно включили.
+            // Выключение молчит само: проверка внутри уже видит новое значение.
+            .hapticFeedback(.selection, trigger: haptics.isEnabled)
         }
         .presentationDetents([.medium, .large])
         .presentationBackground(Color(.systemBackground))

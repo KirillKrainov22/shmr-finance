@@ -86,9 +86,9 @@ struct AccountEditView: View {
             } message: {
                 Text(viewModel.errorMessage)
             }
-            .sensoryFeedback(.success, trigger: savedCount)
+            .hapticFeedback(.success, trigger: savedCount)
             // Незаполненные поля — предупреждение, а не отказ: данные никуда не ушли.
-            .sensoryFeedback(trigger: showValidationAlert) { _, isShowing in
+            .hapticFeedback(trigger: showValidationAlert) { _, isShowing in
                 isShowing ? .warning : nil
             }
             .errorFeedback(when: viewModel.showError)

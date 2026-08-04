@@ -34,6 +34,13 @@ final class AnalyticsViewController: UIViewController {
 
     private var loadTask: Task<Void, Never>?
 
+    // Смена значения фильтра — это движение по ряду дискретных значений,
+    // именно для такого Apple и предлагает selection.
+    private let selectionFeedback = UISelectionFeedbackGenerator()
+    // Границу периода подвинуло само приложение, а не пользователь: дата
+    // упёрлась в соседнюю и оттолкнула её. Толчок — метафора удара.
+    private let boundsFeedback = UIImpactFeedbackGenerator(style: .light)
+
     init(direction: Direction?) {
         viewModel = AnalyticsViewModel(direction: direction)
         super.init(nibName: nil, bundle: nil)
@@ -255,6 +262,7 @@ final class AnalyticsViewController: UIViewController {
                 return
             }
             self.viewModel.setTypeFilter(filter)
+            self.reportFilterChange()
             self.reload()
         }
 
@@ -294,6 +302,7 @@ final class AnalyticsViewController: UIViewController {
             }
 
             self.viewModel.setPeriodPreset(preset)
+            self.reportFilterChange()
 
             guard case .custom = preset else {
                 self.reload()
@@ -314,7 +323,10 @@ final class AnalyticsViewController: UIViewController {
                 guard let self else {
                     return
                 }
+                let previousEnd = self.viewModel.endDate
                 self.viewModel.setStartDate(date)
+                // Дату конца никто не трогал — значит её подтянуло начало.
+                self.reportBoundsCorrection(moved: self.viewModel.endDate != previousEnd)
                 self.syncPeriodPicker()
                 self.reload()
             },
@@ -322,7 +334,9 @@ final class AnalyticsViewController: UIViewController {
                 guard let self else {
                     return
                 }
+                let previousStart = self.viewModel.startDate
                 self.viewModel.setEndDate(date)
+                self.reportBoundsCorrection(moved: self.viewModel.startDate != previousStart)
                 self.syncPeriodPicker()
                 self.reload()
             }
@@ -331,6 +345,25 @@ final class AnalyticsViewController: UIViewController {
         periodPicker = picker
         // Календарь высокий — половины экрана ему мало.
         presentSheet(picker, detents: [.large()])
+    }
+
+    // Экран на UIKit, поэтому проверяем настройку сами — в SwiftUI за это
+    // отвечает общий hapticFeedback.
+    private func reportFilterChange() {
+        guard HapticsSettings.shared.isEnabled else {
+            return
+        }
+        selectionFeedback.selectionChanged()
+    }
+
+    // Саму выбранную дату не озвучиваем: календарь уже дал отклик на тап,
+    // второй подряд читался бы как сбой. Отзываемся только когда сдвинулась
+    // вторая граница — этого пользователь не делал и мог не заметить.
+    private func reportBoundsCorrection(moved: Bool) {
+        guard moved, HapticsSettings.shared.isEnabled else {
+            return
+        }
+        boundsFeedback.impactOccurred()
     }
 
     private func syncPeriodPicker() {
@@ -352,6 +385,7 @@ final class AnalyticsViewController: UIViewController {
             mode: .multiple
         ) { [weak self] ids in
             self?.viewModel.setSelectedCategoryIDs(ids)
+            self?.reportFilterChange()
             self?.reload()
         }
 
@@ -380,6 +414,7 @@ final class AnalyticsViewController: UIViewController {
                 return
             }
             self.viewModel.setSortOption(all[index])
+            self.reportFilterChange()
             // Данные те же, меняется только порядок — в сеть идти незачем.
             self.render()
         }
@@ -411,6 +446,7 @@ final class AnalyticsViewController: UIViewController {
                 return
             }
             self?.viewModel.setSelectedAccountID(id)
+            self?.reportFilterChange()
             self?.reload()
         }
 

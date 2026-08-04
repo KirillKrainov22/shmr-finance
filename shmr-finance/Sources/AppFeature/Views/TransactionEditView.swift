@@ -148,11 +148,11 @@ struct TransactionEditView: View {
                 Text(viewModel.errorMessage)
             }
             // Операция сохранена — системный «успех».
-            .sensoryFeedback(.success, trigger: savedCount)
+            .hapticFeedback(.success, trigger: savedCount)
             // Удаление — не успех, а исчезновение объекта, поэтому обычный удар.
-            .sensoryFeedback(.impact(weight: .medium, intensity: 1), trigger: deletedCount)
+            .hapticFeedback(.impact(weight: .medium, intensity: 1), trigger: deletedCount)
             // Незаполненные поля — предупреждение, а не отказ: данные никуда не ушли.
-            .sensoryFeedback(trigger: showValidationAlert) { _, isShowing in
+            .hapticFeedback(trigger: showValidationAlert) { _, isShowing in
                 isShowing ? .warning : nil
             }
             .errorFeedback(when: viewModel.showError)

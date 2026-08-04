@@ -67,6 +67,11 @@ struct TransactionsListView: View {
                 Text(viewModel.errorMessage)
             }
             .errorFeedback(when: viewModel.showError)
+            // ТЗ просит отдачу на кнопке добавления. Лёгкий толчок, а не
+            // «успех»: операции ещё нет, форма только открывается.
+            .hapticFeedback(trigger: showAddTransaction) { _, isShowing in
+                isShowing ? .impact(weight: .light, intensity: 1) : nil
+            }
             .navigationDestination(isPresented: $showAnalytics) {
                 // Свою панель прячем: у экрана аналитики она собственная, из UIKit.
                 AnalyticsView(direction: viewModel.direction)

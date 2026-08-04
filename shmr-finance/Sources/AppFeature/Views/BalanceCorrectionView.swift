@@ -69,7 +69,7 @@ struct BalanceCorrectionView: View {
                 }
             }
             // Удаление — не успех, а исчезновение объекта, поэтому обычный удар.
-            .sensoryFeedback(.impact(weight: .medium, intensity: 1), trigger: deletedCount)
+            .hapticFeedback(.impact(weight: .medium, intensity: 1), trigger: deletedCount)
             .presentationDetents([.medium, .large])
         }
         .presentationBackground(Color(.systemBackground)) // белый фон, как у формы операции

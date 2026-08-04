@@ -79,6 +79,9 @@ public struct MainTabView: View {
                     Label("Счета", systemImage: "wallet.bifold").environment(\.symbolVariants, .none)
                 }
         }
+        // Переключение вкладок — движение по ряду дискретных значений,
+        // штатный случай для selection по документации Apple.
+        .hapticFeedback(.selection, trigger: selectedTab)
         .overlay(alignment: .bottom) {
             if offlineState.isOffline {
                 offlineBanner
