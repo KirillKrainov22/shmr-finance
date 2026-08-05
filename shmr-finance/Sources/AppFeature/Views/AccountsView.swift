@@ -71,10 +71,10 @@ struct AccountsView: View {
             // Баланс прячется мягкой анимацией, поэтому и отдача мягкая по характеру,
             // но в полную силу — иначе на тряске её почти не чувствуешь.
             .sensoryFeedback(.impact(flexibility: .soft, intensity: 1), trigger: isBalanceHidden)
-            .navigationDestination(isPresented: $showAnalytics) {
+            // Показывается модально — см. комментарий в списке операций.
+            .fullScreenCover(isPresented: $showAnalytics) {
                 // Пришли не со списка операций — тип операций заранее неизвестен.
                 AnalyticsView(direction: nil)
-                    .toolbar(.hidden, for: .navigationBar)
                     .ignoresSafeArea()
             }
             .sheet(isPresented: $showSettings) {
@@ -177,6 +177,8 @@ struct AccountsView: View {
             DatePicker(
                 "Дата",
                 selection: $viewModel.selectedDate,
+                // Операций из будущего не бывает — верхнюю границу закрываем.
+                in: ...Date(),
                 displayedComponents: .date
             )
             .datePickerStyle(.graphical)
@@ -260,7 +262,9 @@ struct AccountsView: View {
             Text(account.name)
                 .scaledFont(size: 16, weight: .medium)
             Spacer()
-            Text(account.balance, format: currencyFormat)
+            // Валюта своя у каждого счёта, а не общая для экрана: иначе
+            // рублёвый счёт показывался бы со знаком выбранного долларового.
+            Text(account.balance, format: currencyFormat(for: account))
                 .scaledFont(size: 14, weight: .medium)
         }
         .padding(.vertical, 3)
@@ -301,8 +305,8 @@ struct AccountsView: View {
         .accessibilityLabel("Добавить счёт")
     }
 
-    private var currencyFormat: Decimal.FormatStyle.Currency {
-        .currency(code: viewModel.currencyCode).precision(.fractionLength(0...2))
+    private func currencyFormat(for account: BankAccount) -> Decimal.FormatStyle.Currency {
+        .currency(code: account.currency).precision(.fractionLength(0...2))
     }
 
     private var backgroundColor: Color {

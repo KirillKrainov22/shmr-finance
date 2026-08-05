@@ -67,10 +67,11 @@ struct TransactionsListView: View {
                 Text(viewModel.errorMessage)
             }
             .errorFeedback(when: viewModel.showError)
-            .navigationDestination(isPresented: $showAnalytics) {
-                // Свою панель прячем: у экрана аналитики она собственная, из UIKit.
+            // Аналитика показывается модально, а не пушится в стек: внутри
+            // неё свой UINavigationController, и вкладывать его в NavigationStack
+            // означало бы две системы навигации друг в друге.
+            .fullScreenCover(isPresented: $showAnalytics) {
                 AnalyticsView(direction: viewModel.direction)
-                    .toolbar(.hidden, for: .navigationBar)
                     .ignoresSafeArea()
             }
             .sheet(isPresented: $showSettings) {
@@ -182,6 +183,8 @@ struct TransactionsListView: View {
             DatePicker(
                 "Дата",
                 selection: $viewModel.selectedDate,
+                // Операций из будущего не бывает — верхнюю границу закрываем.
+                in: ...Date(),
                 displayedComponents: .date
             )
             .datePickerStyle(.graphical)
