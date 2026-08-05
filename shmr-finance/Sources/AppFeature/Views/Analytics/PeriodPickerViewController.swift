@@ -81,6 +81,8 @@ final class PeriodPickerViewController: UIViewController {
         calendar.datePickerMode = .date
         calendar.preferredDatePickerStyle = .inline
         calendar.locale = Locale(identifier: "ru_RU")
+        // Аналитика за будущее лишена смысла: операций там нет и быть не может.
+        calendar.maximumDate = Date()
         calendar.addAction(
             UIAction { [weak self] _ in
                 self?.calendarDateChanged()
