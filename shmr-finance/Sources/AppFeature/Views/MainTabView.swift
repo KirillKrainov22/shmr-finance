@@ -24,16 +24,25 @@ public struct MainTabView: View {
 
     @State private var selectedTab = Tab.expenses
 
+    // Если код-пароль не установлен, разблокировка не требуется вовсе.
+    @State private var isUnlocked = PasscodeStore.isSet == false
+
     private var isReady: Bool {
         isStorageReady && isSplashFinished
     }
 
     public var body: some View {
         Group {
-            if isReady {
-                tabs
-            } else {
+            if isReady == false {
                 splash
+            } else if isUnlocked == false {
+                // Пароль спрашиваем после заставки и до вкладок: показывать
+                // экраны с суммами до разблокировки нельзя.
+                PasscodeView(mode: .unlock) {
+                    isUnlocked = true
+                }
+            } else {
+                tabs
             }
         }
         .animation(.easeInOut(duration: 0.25), value: isReady)
