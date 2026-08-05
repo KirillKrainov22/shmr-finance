@@ -203,6 +203,7 @@ struct TransactionsListView: View {
             }
         }
         .presentationDetents([.medium])
+        .presentationBackground(Color(.systemBackground))
     }
 
     private var header: some View {
@@ -286,9 +287,10 @@ struct TransactionsListView: View {
         .currency(code: "RUB").precision(.fractionLength(0...2))
     }
 
-    // Фон экрана из макета (#FAFAFA), а не чистый белый.
+    // Фон экрана: в светлой теме #FAFAFA из макета, в тёмной чёрный.
+    // Оба варианта лежат в ассетах приложения.
     private var backgroundColor: Color {
-        Color(red: 250 / 255, green: 250 / 255, blue: 250 / 255)
+        Color("ScreenBackground")
     }
 }
 

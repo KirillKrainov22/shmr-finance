@@ -118,6 +118,7 @@ struct PasscodeView: View {
                 .error
             }
         }
+        .presentationBackground(Color(.systemBackground))
     }
 
     private var promptText: String {

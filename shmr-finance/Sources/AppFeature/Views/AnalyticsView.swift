@@ -17,9 +17,6 @@ struct AnalyticsView: UIViewControllerRepresentable {
             dismiss()
         }
         let navigation = UINavigationController(rootViewController: screen)
-        // Приложение всегда светлое, но preferredColorScheme из SwiftUI
-        // до UIKit-экрана не доходит — задаём тему явно.
-        navigation.overrideUserInterfaceStyle = .light
         return navigation
     }
 

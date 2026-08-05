@@ -52,8 +52,8 @@ final class OptionPickerViewController: UITableViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
 
-        view.backgroundColor = .systemBackground
-        tableView.backgroundColor = .systemBackground
+        view.backgroundColor = .sheetBackground
+        tableView.backgroundColor = .sheetBackground
         tableView.register(UITableViewCell.self, forCellReuseIdentifier: "Option")
         tableView.tableFooterView = UIView()
 
@@ -131,7 +131,7 @@ final class OptionPickerViewController: UITableViewController {
         content.text = option.title
         content.secondaryText = option.subtitle
         cell.contentConfiguration = content
-        cell.backgroundColor = .systemBackground
+        cell.backgroundColor = .sheetBackground
         cell.tintColor = .systemBlue
 
         if selectedIDs.contains(option.id) {

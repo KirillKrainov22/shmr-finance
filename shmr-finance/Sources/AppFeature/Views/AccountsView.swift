@@ -196,6 +196,7 @@ struct AccountsView: View {
             }
         }
         .presentationDetents([.medium])
+        .presentationBackground(Color(.systemBackground))
     }
 
     // Общий баланс (только отображение; корректируется каждый счёт по тапу на строку).
@@ -314,7 +315,7 @@ struct AccountsView: View {
     }
 
     private var backgroundColor: Color {
-        Color(red: 250 / 255, green: 250 / 255, blue: 250 / 255)
+        Color("ScreenBackground")
     }
 }
 

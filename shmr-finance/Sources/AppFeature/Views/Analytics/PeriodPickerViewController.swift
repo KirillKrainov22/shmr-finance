@@ -49,7 +49,7 @@ final class PeriodPickerViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
 
-        view.backgroundColor = .systemBackground
+        view.backgroundColor = .sheetBackground
 
         let close = UIBarButtonItem(
             image: UIImage(systemName: "xmark"),

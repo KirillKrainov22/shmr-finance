@@ -51,7 +51,8 @@ final class AnalyticsDetailCell: UITableViewCell {
         dot.layer.cornerRadius = 6
         dot.translatesAutoresizingMaskIntoConstraints = false
 
-        let secondary = UIColor(red: 0.286, green: 0.271, blue: 0.310, alpha: 1)
+        // Тот же цвет, что у подписей диаграммы, — и он уже знает обе темы.
+        let secondary = PieChartColors.secondaryText
         // Размер из макета, но растёт вместе с системным шрифтом.
         let font = UIFontMetrics(forTextStyle: .callout).scaledFont(
             for: .systemFont(ofSize: 16, weight: .medium)

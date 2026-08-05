@@ -225,22 +225,34 @@ final class AnalyticsViewController: UIViewController {
     private func presentSheet(_ controller: UIViewController, detents: [UISheetPresentationController.Detent]) {
         let navigation = UINavigationController(rootViewController: controller)
         navigation.navigationBar.prefersLargeTitles = false
-        navigation.view.backgroundColor = .systemBackground
+        navigation.view.backgroundColor = .sheetBackground
 
         // Без этого iOS 26 рисует панель шторки стеклом, а в макете она белая,
         // как и всё остальное приложение.
         let appearance = UINavigationBarAppearance()
         appearance.configureWithOpaqueBackground()
-        appearance.backgroundColor = .systemBackground
+        appearance.backgroundColor = .sheetBackground
         appearance.shadowColor = .separator
         navigation.navigationBar.standardAppearance = appearance
         navigation.navigationBar.scrollEdgeAppearance = appearance
+        navigation.navigationBar.compactAppearance = appearance
+
+        // В тёмной теме UIKit сам поднимает модальный экран на «приподнятый»
+        // уровень, и системные цвета на нём светлеют: systemBackground из
+        // чёрного становится серым. Так шторку отделяют от фона, но у нас
+        // соседние шторки сделаны на SwiftUI — тот уровень не поднимает,
+        // и одинаковые по смыслу окна выглядели по-разному. Возвращаем базовый.
+        navigation.traitOverrides.userInterfaceLevel = .base
 
         if let sheet = navigation.sheetPresentationController {
             sheet.detents = detents
             sheet.prefersGrabberVisible = true
         }
         present(navigation, animated: true)
+
+        // Контейнер отвечает за низ шторки, экран — за верх.
+        navigation.view.pinOpaqueBackground()
+        controller.view.pinOpaqueBackground()
     }
 
     private func showTypePicker() {
@@ -587,5 +599,52 @@ extension AnalyticsViewController: UITableViewDelegate {
         case .sort:
             showSortPicker()
         }
+    }
+}
+
+extension UIView {
+
+    // iOS 26 показывает шторку на стеклянной подложке и ради этого держит
+    // её слои прозрачными: backgroundColor у вью задан, а до слоя не доходит.
+    // В светлой теме стекло было почти белым и не мешало, в тёмной проступило
+    // серым. Цвет, записанный прямо в слой, система не перебивает — но CGColor
+    // не умеет подстраиваться под тему, поэтому обновляем его при смене стиля.
+    func pinOpaqueBackground() {
+        registerForTraitChanges([UITraitUserInterfaceStyle.self]) { (view: UIView, _: UITraitCollection) in
+            view.applyOpaqueBackground()
+        }
+        // Пока идёт анимация показа, система переписывает фон слоя под себя,
+        // и разовой покраски не хватает: шторка успевает мелькнуть серой.
+        // Поэтому повторяем каждый кадр, пока анимация не закончится.
+        repeatOpaqueBackground(until: Date().addingTimeInterval(0.7))
+    }
+
+    fileprivate func applyOpaqueBackground() {
+        layer.backgroundColor = UIColor.sheetBackground.resolvedColor(with: traitCollection).cgColor
+    }
+
+    private func repeatOpaqueBackground(until deadline: Date) {
+        applyOpaqueBackground()
+        guard Date() < deadline else {
+            return
+        }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.0 / 60) { [weak self] in
+            self?.repeatOpaqueBackground(until: deadline)
+        }
+    }
+}
+
+extension UIColor {
+
+    // Над содержимым шторки лежит светлая вуаль стекла, и на чёрном фоне
+    // строки из-за неё выглядят чуть светлее. Пустую часть под списком красим
+    // тем же оттенком, иначе шторка делится надвое по границе контента.
+    // В светлой теме вуаль на белом незаметна — там обычный фон.
+    // Один и тот же фон для всех слоёв шторки: контейнера, таблицы,
+    // ячеек и панели навигации — иначе они расходятся по оттенку.
+    static let sheetBackground = UIColor { traits in
+        traits.userInterfaceStyle == .dark
+            ? UIColor(white: 0.122, alpha: 1)
+            : .systemBackground
     }
 }

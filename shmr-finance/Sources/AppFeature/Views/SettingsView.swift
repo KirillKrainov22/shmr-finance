@@ -10,6 +10,7 @@ struct SettingsView: View {
     // Режим экрана код-пароля: он же признак того, что шторка открыта.
     @State private var passcodeMode: PasscodeView.Mode?
     @State private var showBiometry = false
+    @State private var showTheme = false
     // Перечитываем после закрытия экрана: подпись строки зависит от того,
     // установлен код или нет.
     @State private var isPasscodeSet = PasscodeStore.isSet
@@ -33,7 +34,22 @@ struct SettingsView: View {
                 }
 
                 Section {
-                    stubRow("Тема оформления")
+                    Button {
+                        showTheme = true
+                    } label: {
+                        HStack {
+                            Text("Тема оформления")
+                            Spacer()
+                            Text(ThemeSettings.shared.theme.title)
+                                .foregroundStyle(.secondary)
+                            Image(systemName: "chevron.right")
+                                .font(.footnote.weight(.semibold))
+                                .foregroundStyle(.tertiary)
+                                .accessibilityHidden(true)
+                        }
+                        .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
                     stubRow("Язык")
                     Toggle("Тактильная отдача", isOn: $haptics.isEnabled)
                 } header: {
@@ -80,6 +96,11 @@ struct SettingsView: View {
             }
             .sheet(isPresented: $showCategories) {
                 CategoriesView(direction: direction)
+            }
+            .sheet(isPresented: $showTheme) {
+                ThemeView()
+                    .presentationDetents([.fraction(0.4)])
+                    .presentationDragIndicator(.visible)
             }
             .sheet(isPresented: $showBiometry) {
                 BiometryView()

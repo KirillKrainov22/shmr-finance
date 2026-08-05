@@ -44,6 +44,8 @@ struct AccountPickerView: View {
             }
         }
         .presentationDetents([.medium, .large])
+        // Иначе iOS 26 рисует шторку стеклом — в приложении они все сплошные.
+        .presentationBackground(Color(.systemBackground))
     }
 }
 

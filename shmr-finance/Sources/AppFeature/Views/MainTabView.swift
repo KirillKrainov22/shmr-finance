@@ -52,11 +52,12 @@ public struct MainTabView: View {
             // Слушать уход в фон начинаем сразу: приложение можно свернуть
             // и на заставке.
             AppSwitcherBlur.shared.start()
+            // Окно к этому моменту уже существует — можно красить.
+            ThemeSettings.shared.apply()
             await LocalStorages.migrateIfNeeded()
             isStorageReady = true
         }
-        // Приложение всегда в светлой теме, даже если на телефоне включена тёмная.
-        .preferredColorScheme(.light)
+
     }
 
     private var splash: some View {
@@ -65,7 +66,7 @@ public struct MainTabView: View {
         }
         .padding(40)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(Color.white)
+        .background(Color(.systemBackground))
         .ignoresSafeArea()
         .transition(.opacity)
     }

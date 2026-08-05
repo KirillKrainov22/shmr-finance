@@ -345,7 +345,7 @@ private final class RingView: UIView {
                 clockwise: true
             )
             path.lineWidth = PieChartMetrics.ringWidth
-            UIColor.systemGray5.setStroke()
+            UIColor.systemGray4.setStroke()
             path.stroke()
             return
         }
@@ -552,10 +552,23 @@ private final class LegendView: UIView {
 
 // MARK: - Оформление текста
 
-enum PieChartColors {
+// Публичны только цвета подписей: их переиспользует список детализации
+// в приложении, чтобы не заводить вторую копию тех же значений.
+public enum PieChartColors {
 
-    static let secondaryText = UIColor(red: 0.286, green: 0.271, blue: 0.310, alpha: 1) // #49454F
-    static let primaryText = UIColor(red: 0.114, green: 0.106, blue: 0.126, alpha: 1)   // #1D1B20
+    // Цвета из макета — светлые варианты. Модуль рисует руками, поэтому
+    // системные цвета сюда не подставить: собираем пару под каждую тему.
+    public static let secondaryText = UIColor { traits in
+        traits.userInterfaceStyle == .dark
+            ? UIColor(red: 0.796, green: 0.780, blue: 0.827, alpha: 1) // #CBC7D3
+            : UIColor(red: 0.286, green: 0.271, blue: 0.310, alpha: 1) // #49454F
+    }
+
+    public static let primaryText = UIColor { traits in
+        traits.userInterfaceStyle == .dark
+            ? UIColor(red: 0.949, green: 0.937, blue: 0.957, alpha: 1) // #F2EFF4
+            : UIColor(red: 0.114, green: 0.106, blue: 0.126, alpha: 1) // #1D1B20
+    }
 
     // Размеры взяты из макета, поэтому семантические стили не используем —
     // они увели бы диаграмму от него. Вместо этого масштабируем сами,

@@ -27,7 +27,7 @@ final class AnalyticsDetailsViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
 
-        view.backgroundColor = .systemBackground
+        view.backgroundColor = .sheetBackground
 
         let close = UIBarButtonItem(
             image: UIImage(systemName: "xmark"),
@@ -39,7 +39,7 @@ final class AnalyticsDetailsViewController: UIViewController {
         navigationItem.rightBarButtonItem = close
 
         tableView.dataSource = self
-        tableView.backgroundColor = .systemBackground
+        tableView.backgroundColor = .sheetBackground
         tableView.separatorStyle = .none
         tableView.register(AnalyticsDetailCell.self, forCellReuseIdentifier: AnalyticsDetailCell.reuseID)
         tableView.translatesAutoresizingMaskIntoConstraints = false
