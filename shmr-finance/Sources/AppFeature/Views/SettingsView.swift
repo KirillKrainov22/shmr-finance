@@ -9,6 +9,7 @@ struct SettingsView: View {
     @State private var showCategories = false
     // Режим экрана код-пароля: он же признак того, что шторка открыта.
     @State private var passcodeMode: PasscodeView.Mode?
+    @State private var showBiometry = false
     // Перечитываем после закрытия экрана: подпись строки зависит от того,
     // установлен код или нет.
     @State private var isPasscodeSet = PasscodeStore.isSet
@@ -56,7 +57,13 @@ struct SettingsView: View {
                         .contentShape(Rectangle())
                     }
                     .buttonStyle(.plain)
-                    stubRow("Биометрия")
+                    Button {
+                        showBiometry = true
+                    } label: {
+                        settingRow("Биометрия")
+                            .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
                 } header: {
                     Text("Безопасность").textCase(nil)
                 }
@@ -73,6 +80,11 @@ struct SettingsView: View {
             }
             .sheet(isPresented: $showCategories) {
                 CategoriesView(direction: direction)
+            }
+            .sheet(isPresented: $showBiometry) {
+                BiometryView()
+                    .presentationDetents([.fraction(0.4)])
+                    .presentationDragIndicator(.visible)
             }
             .sheet(item: $passcodeMode) { mode in
                 PasscodeView(mode: mode) {

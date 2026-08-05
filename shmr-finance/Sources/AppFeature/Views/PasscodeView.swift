@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 
 // Экран код-пароля. По ТЗ один на все роли: установка, смена и вход
 // отличаются только набором шагов, а не вёрсткой.
@@ -52,7 +53,6 @@ struct PasscodeView: View {
     @State private var newCode = ""
     @State private var errorMessage: String?
     @State private var shakeCount = 0
-    @State private var successCount = 0
     @FocusState private var isTyping: Bool
 
     private var step: Step {
@@ -97,6 +97,17 @@ struct PasscodeView: View {
                 // Экран появляется сразу после заставки, и запрос фокуса
                 // в этот момент система игнорирует — даём ей досчитать анимацию.
                 try? await Task.sleep(for: .milliseconds(400))
+
+                // Биометрию предлагаем только на входе: при смене кода нужно
+                // подтвердить знание старого, а не владение телефоном.
+                if mode == .unlock, BiometrySettings.shared.shouldAsk {
+                    if await BiometrySettings.shared.authenticate() {
+                        finish()
+                        return
+                    }
+                }
+
+                // Не сработало или не предлагали — вводим код руками.
                 isTyping = true
             }
             .onChange(of: entered) { _, newValue in
@@ -106,9 +117,6 @@ struct PasscodeView: View {
             .hapticFeedback(trigger: shakeCount) { _, _ in
                 .error
             }
-            // Успех: экран сменится не мгновенно, и без отдачи непонятно,
-            // приняли код или ещё думают.
-            .hapticFeedback(.success, trigger: successCount)
         }
     }
 
@@ -219,6 +227,15 @@ struct PasscodeView: View {
         }
     }
 
+    // Прямой вызов, а не модификатор: при входе экран исчезает в тот же
+    // момент, и отдача через вью просто не успевает сработать.
+    private func playSuccess() {
+        guard HapticsSettings.shared.isEnabled else {
+            return
+        }
+        UINotificationFeedbackGenerator().notificationOccurred(.success)
+    }
+
     private func fail(_ message: String) {
         entered = ""
         errorMessage = message
@@ -226,7 +243,7 @@ struct PasscodeView: View {
     }
 
     private func finish() {
-        successCount += 1
+        playSuccess()
         onFinish()
         if mode != .unlock {
             dismiss()

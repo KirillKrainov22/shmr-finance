@@ -4,5 +4,7 @@
 <dict>
 	<key>APIToken</key>
 	<string>$(API_TOKEN)</string>
+	<key>NSFaceIDUsageDescription</key>
+	<string>Чтобы входить в приложение без ввода ПИН-кода</string>
 </dict>
 </plist>
