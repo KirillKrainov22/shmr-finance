@@ -49,7 +49,6 @@ struct TransactionsListView: View {
                     }
                 }
             }
-            .background(backgroundColor)
             .environment(\.locale, Locale(identifier: "ru_RU")) // ₽ и русские даты на всём экране
             .toolbar(.hidden, for: .navigationBar)
             .overlay {
@@ -61,6 +60,11 @@ struct TransactionsListView: View {
             .overlay(alignment: .bottomTrailing) {
                 addButton
             }
+            // Ширину ограничиваем всему содержимому разом, вместе с кнопкой
+            // добавления: иначе на iPad она осталась бы у самого края экрана,
+            // далеко от списка. Фон при этом остаётся во всю ширину.
+            .readableWidth()
+            .background(backgroundColor)
             .alert("Ошибка", isPresented: $viewModel.showError) {
                 Button("Ок", role: .cancel) {}
             } message: {
@@ -75,10 +79,7 @@ struct TransactionsListView: View {
             // Аналитика показывается модально, а не пушится в стек: внутри
             // неё свой UINavigationController, и вкладывать его в NavigationStack
             // означало бы две системы навигации друг в друге.
-            .fullScreenCover(isPresented: $showAnalytics) {
-                AnalyticsView(direction: viewModel.direction)
-                    .ignoresSafeArea()
-            }
+            .analyticsCover(isPresented: $showAnalytics, direction: viewModel.direction)
             .sheet(isPresented: $showSettings) {
                 SettingsView(direction: viewModel.direction)
             }

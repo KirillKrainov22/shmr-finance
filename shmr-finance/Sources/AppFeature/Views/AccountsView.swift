@@ -50,7 +50,6 @@ struct AccountsView: View {
                     await viewModel.load()
                 }
             }
-            .background(backgroundColor)
             .environment(\.locale, Locale(identifier: "ru_RU"))
             .toolbar(.hidden, for: .navigationBar)
             .overlay {
@@ -62,6 +61,9 @@ struct AccountsView: View {
             .overlay(alignment: .bottomTrailing) {
                 addButton
             }
+            // Вместе с кнопкой добавления — см. комментарий в списке операций.
+            .readableWidth()
+            .background(backgroundColor)
             .alert("Ошибка", isPresented: $viewModel.showError) {
                 Button("Ок", role: .cancel) {}
             } message: {
@@ -76,11 +78,8 @@ struct AccountsView: View {
                 isShowing ? .impact(weight: .light, intensity: 1) : nil
             }
             // Показывается модально — см. комментарий в списке операций.
-            .fullScreenCover(isPresented: $showAnalytics) {
-                // Пришли не со списка операций — тип операций заранее неизвестен.
-                AnalyticsView(direction: nil)
-                    .ignoresSafeArea()
-            }
+            // Пришли не со списка операций — тип операций заранее неизвестен.
+            .analyticsCover(isPresented: $showAnalytics, direction: nil)
             .sheet(isPresented: $showSettings) {
                 SettingsView(direction: nil)
             }

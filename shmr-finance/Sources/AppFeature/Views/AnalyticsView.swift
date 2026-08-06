@@ -23,3 +23,41 @@ struct AnalyticsView: UIViewControllerRepresentable {
     func updateUIViewController(_ controller: UINavigationController, context: Context) {
     }
 }
+
+extension View {
+
+    // На iPhone аналитика занимает весь экран: места мало, и уменьшать его
+    // ради полоски фона под шторкой незачем. На iPad по ТЗ модальные экраны
+    // на всю площадь не разворачиваются — там обычная шторка.
+    func analyticsCover(isPresented: Binding<Bool>, direction: Direction?) -> some View {
+        modifier(AnalyticsCover(isPresented: isPresented, direction: direction))
+    }
+}
+
+private struct AnalyticsCover: ViewModifier {
+
+    @Binding var isPresented: Bool
+    let direction: Direction?
+
+    private var isPad: Bool {
+        UIDevice.current.userInterfaceIdiom == .pad
+    }
+
+    @ViewBuilder
+    func body(content: Content) -> some View {
+        if isPad {
+            content.sheet(isPresented: $isPresented) {
+                analytics
+            }
+        } else {
+            content.fullScreenCover(isPresented: $isPresented) {
+                analytics
+            }
+        }
+    }
+
+    private var analytics: some View {
+        AnalyticsView(direction: direction)
+            .ignoresSafeArea()
+    }
+}
