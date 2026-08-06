@@ -30,10 +30,10 @@ struct CategoriesView: View {
                     }
             }
             .listStyle(.plain)
-            .navigationTitle("Статьи")
+            .navigationTitle(appString("Статьи"))
             .navigationBarTitleDisplayMode(.inline)
-            .environment(\.locale, Locale(identifier: "ru_RU"))
-            .searchable(text: $viewModel.searchText, prompt: "Поиск")
+            .environment(\.locale, LocalizationSettings.shared.locale)
+            .searchable(text: $viewModel.searchText, prompt: appString("Поиск"))
             .minimizedSearchBehavior()
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
@@ -53,8 +53,8 @@ struct CategoriesView: View {
                         .controlSize(.large)
                 }
             }
-            .alert("Ошибка", isPresented: $viewModel.showError) {
-                Button("Ок", role: .cancel) {}
+            .alert(appString("Ошибка"), isPresented: $viewModel.showError) {
+                Button(appString("Ок"), role: .cancel) {}
             } message: {
                 Text(viewModel.errorMessage)
             }

@@ -17,11 +17,11 @@ struct PasscodeView: View {
         var title: String {
             switch self {
             case .set:
-                return "Установить ПИН-код"
+                return appString("Установить ПИН-код")
             case .change:
-                return "Изменить ПИН-код"
+                return appString("Изменить ПИН-код")
             case .unlock:
-                return "ПИН-код"
+                return appString("ПИН-код")
             }
         }
 
@@ -124,11 +124,11 @@ struct PasscodeView: View {
     private var promptText: String {
         switch step {
         case .currentCode:
-            return mode == .unlock ? "Введите ПИН-код" : "Введите текущий ПИН-код"
+            return mode == .unlock ? appString("Введите ПИН-код") : appString("Введите текущий ПИН-код")
         case .newCode:
-            return "Введите новый ПИН-код"
+            return appString("Введите новый ПИН-код")
         case .repeatCode:
-            return "Повторите ПИН-код"
+            return appString("Повторите ПИН-код")
         }
     }
 
@@ -158,7 +158,7 @@ struct PasscodeView: View {
         .modifier(ShakeEffect(shakes: shakeCount))
         .animation(.default, value: shakeCount)
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel("Введено цифр: \(entered.count) из \(PasscodeStore.length)")
+        .accessibilityLabel(String(format: appString("Введено цифр: %lld из %lld"), entered.count, PasscodeStore.length))
     }
 
     // MARK: - Ввод
@@ -196,7 +196,7 @@ struct PasscodeView: View {
         switch step {
         case .currentCode:
             guard PasscodeStore.matches(entered) else {
-                fail("Неверный ПИН-код")
+                fail(appString("Неверный ПИН-код"))
                 return
             }
             advance()
@@ -209,7 +209,7 @@ struct PasscodeView: View {
             guard entered == newCode else {
                 // Возвращаем к вводу нового кода: повторять неизвестно что
                 // бессмысленно, человек уже забыл, что набрал в первый раз.
-                fail("ПИН-коды не совпадают")
+                fail(appString("ПИН-коды не совпадают"))
                 stepIndex = mode.steps.firstIndex(of: .newCode) ?? 0
                 newCode = ""
                 return

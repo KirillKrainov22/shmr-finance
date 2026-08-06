@@ -37,7 +37,7 @@ struct TransactionEditView: View {
                 Button {
                     showCategoryPicker = true
                 } label: {
-                    pickerRow(title: "Статья", value: viewModel.category?.name)
+                    pickerRow(title: appString("Статья"), value: viewModel.category?.name)
                 }
                 .buttonStyle(.plain)
 
@@ -50,7 +50,7 @@ struct TransactionEditView: View {
                     detent = showDatePicker ? .large : .medium
                 } label: {
                     HStack {
-                        Text("Дата и время")
+                        Text(appString("Дата и время"))
                         Spacer()
                         Text(dateTimeText)
                             .foregroundStyle(.secondary)
@@ -79,14 +79,14 @@ struct TransactionEditView: View {
                 Button {
                     showAccountPicker = true
                 } label: {
-                    pickerRow(title: "Счёт", value: viewModel.account?.name)
+                    pickerRow(title: appString("Счёт"), value: viewModel.account?.name)
                 }
                 .buttonStyle(.plain)
 
                 Divider()
 
                 // Комментарий (плейсхолдер серый по умолчанию).
-                TextField("Комментарий", text: $viewModel.comment)
+                TextField(appString("Комментарий"), text: $viewModel.comment)
                     .padding(.horizontal, 16)
                     .padding(.vertical, 14)
 
@@ -102,7 +102,7 @@ struct TransactionEditView: View {
                             }
                         }
                     } label: {
-                        Text("Удалить операцию")
+                        Text(appString("Удалить операцию"))
                             .frame(maxWidth: .infinity, alignment: .leading)
                             .padding(.horizontal, 16)
                             .padding(.vertical, 14)
@@ -111,7 +111,7 @@ struct TransactionEditView: View {
 
                 }
             }
-            .environment(\.locale, Locale(identifier: "ru_RU"))
+            .environment(\.locale, LocalizationSettings.shared.locale)
             .scrollDismissesKeyboard(.interactively)
             .navigationTitle(title)
             .navigationBarTitleDisplayMode(.inline)
@@ -122,7 +122,7 @@ struct TransactionEditView: View {
                     }
                 }
                 ToolbarItem(placement: .confirmationAction) {
-                    ToolbarConfirmButton(label: "Сохранить") {
+                    ToolbarConfirmButton(label: appString("Сохранить")) {
                         confirm()
                     }
                 }
@@ -137,13 +137,13 @@ struct TransactionEditView: View {
                     viewModel.account = selected
                 }
             }
-            .alert("Заполните все поля", isPresented: $showValidationAlert) {
-                Button("Ок", role: .cancel) {}
+            .alert(appString("Заполните все поля"), isPresented: $showValidationAlert) {
+                Button(appString("Ок"), role: .cancel) {}
             } message: {
                 Text(validationMessage)
             }
-            .alert("Ошибка", isPresented: $viewModel.showError) {
-                Button("Ок", role: .cancel) {}
+            .alert(appString("Ошибка"), isPresented: $viewModel.showError) {
+                Button(appString("Ок"), role: .cancel) {}
             } message: {
                 Text(viewModel.errorMessage)
             }
@@ -208,7 +208,7 @@ struct TransactionEditView: View {
         HStack {
             Text(title)
             Spacer()
-            Text(value ?? "Выбрать")
+            Text(value ?? appString("Выбрать"))
                 .foregroundStyle(.secondary)
             Image(systemName: "chevron.right")
                 .font(.footnote.weight(.semibold))
@@ -224,23 +224,23 @@ struct TransactionEditView: View {
         case .create:
             switch viewModel.direction {
             case .income:
-                return "Внести доход"
+                return appString("Внести доход")
             case .outcome:
-                return "Внести расход"
+                return appString("Внести расход")
             }
         case .edit:
             switch viewModel.direction {
             case .income:
-                return "Мои доходы"
+                return appString("Мои доходы")
             case .outcome:
-                return "Мои расходы"
+                return appString("Мои расходы")
             }
         }
     }
 
     // «21 июня, 12:34» — дата и время через запятую (системный формат вставляет «в»).
     private var dateTimeText: String {
-        let locale = Locale(identifier: "ru_RU")
+        let locale = LocalizationSettings.shared.locale
         let day = viewModel.date.formatted(
             .dateTime.day().month(.wide).locale(locale)
         )
@@ -254,15 +254,15 @@ struct TransactionEditView: View {
     private var validationMessage: String {
         var missing: [String] = []
         if viewModel.category == nil {
-            missing.append("статью")
+            missing.append(appString("статью"))
         }
         if viewModel.account == nil {
-            missing.append("счёт")
+            missing.append(appString("счёт"))
         }
         if viewModel.parsedAmount == nil {
-            missing.append("сумму")
+            missing.append(appString("сумму"))
         }
-        return "Нужно указать: " + missing.joined(separator: ", ") + "."
+        return appString("Нужно указать: ") + missing.joined(separator: ", ") + "."
     }
 
     // Подтверждение: сначала проверяем, что все обязательные поля заполнены.

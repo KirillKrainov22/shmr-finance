@@ -83,12 +83,12 @@ final class AnalyticsViewController: UIViewController {
                 self?.onClose?()
             }
         )
-        back.accessibilityLabel = "Назад"
+        back.accessibilityLabel = appString("Назад")
 
         // Заголовок идёт вторым элементом левой группы, сразу за кнопкой назад.
         // Обычный title навбар ставит по центру, а в макете он прижат влево.
         let titleLabel = UILabel()
-        titleLabel.text = "Аналитика"
+        titleLabel.text = appString("Аналитика")
         titleLabel.font = UIFontMetrics(forTextStyle: .title3).scaledFont(
             for: .systemFont(ofSize: 20, weight: .semibold),
             maximumPointSize: 26 // выше панель начнёт распирать
@@ -136,7 +136,7 @@ final class AnalyticsViewController: UIViewController {
             )
         )
         // Подпись диаграмма составляет сама из своих данных — здесь только подсказка.
-        chartView.accessibilityHint = "Дважды коснитесь, чтобы открыть детализацию"
+        chartView.accessibilityHint = appString("Дважды коснитесь, чтобы открыть детализацию")
     }
 
     @objc
@@ -215,8 +215,8 @@ final class AnalyticsViewController: UIViewController {
     }
 
     private func showError(_ message: String) {
-        let alert = UIAlertController(title: "Ошибка", message: message, preferredStyle: .alert)
-        alert.addAction(UIAlertAction(title: "Ок", style: .cancel))
+        let alert = UIAlertController(title: appString("Ошибка"), message: message, preferredStyle: .alert)
+        alert.addAction(UIAlertAction(title: appString("Ок"), style: .cancel))
         present(alert, animated: true)
     }
 
@@ -261,7 +261,7 @@ final class AnalyticsViewController: UIViewController {
         }
 
         let picker = OptionPickerViewController(
-            title: "Тип",
+            title: appString("Тип"),
             options: options,
             selectedIDs: [viewModel.typeFilter.rawValue],
             mode: .single
@@ -300,7 +300,7 @@ final class AnalyticsViewController: UIViewController {
         }
 
         let picker = OptionPickerViewController(
-            title: "Период",
+            title: appString("Период"),
             options: options,
             selectedIDs: [viewModel.periodPreset.rawValue],
             mode: .single
@@ -391,7 +391,7 @@ final class AnalyticsViewController: UIViewController {
         }
 
         let picker = OptionPickerViewController(
-            title: "Статьи",
+            title: appString("Статьи"),
             options: options,
             selectedIDs: viewModel.selectedCategoryIDs,
             mode: .multiple
@@ -408,12 +408,12 @@ final class AnalyticsViewController: UIViewController {
         let all = TransactionSort.allCases
         // У вариантов сортировки нет числовых id, поэтому берём порядковый номер.
         let options = all.enumerated().map { index, option in
-            OptionPickerViewController.Option(id: index, title: option.rawValue)
+            OptionPickerViewController.Option(id: index, title: option.title)
         }
         let selected = all.firstIndex(of: viewModel.sortOption) ?? 0
 
         let picker = OptionPickerViewController(
-            title: "Сортировка",
+            title: appString("Сортировка"),
             options: options,
             selectedIDs: [selected],
             mode: .single
@@ -438,7 +438,7 @@ final class AnalyticsViewController: UIViewController {
         var options = [
             OptionPickerViewController.Option(
                 id: AnalyticsViewModel.allAccountsID,
-                title: "Все счета"
+                title: appString("Все счета")
             )
         ]
         options += viewModel.accounts.map { account in
@@ -449,7 +449,7 @@ final class AnalyticsViewController: UIViewController {
         }
 
         let picker = OptionPickerViewController(
-            title: "Счёт",
+            title: appString("Счёт"),
             options: options,
             selectedIDs: [viewModel.selectedAccountID],
             mode: .single
@@ -494,7 +494,7 @@ extension AnalyticsViewController: UITableViewDataSource {
     func tableView(_ tableView: UITableView, titleForHeaderInSection section: Int) -> String? {
         switch Section(rawValue: section) {
         case .transactions:
-            return "Транзакции"
+            return appString("Транзакции")
         default:
             return nil
         }
@@ -525,15 +525,15 @@ extension AnalyticsViewController: UITableViewDataSource {
 
         switch row {
         case .type:
-            filterCell.configure(title: "Тип", value: viewModel.typeTitle)
+            filterCell.configure(title: appString("Тип"), value: viewModel.typeTitle)
         case .period:
-            filterCell.configure(title: "Период", value: viewModel.periodTitle)
+            filterCell.configure(title: appString("Период"), value: viewModel.periodTitle)
         case .categories:
-            filterCell.configure(title: "Статьи", value: viewModel.categoriesTitle)
+            filterCell.configure(title: appString("Статьи"), value: viewModel.categoriesTitle)
         case .account:
-            filterCell.configure(title: "Счёт", value: viewModel.accountTitle)
+            filterCell.configure(title: appString("Счёт"), value: viewModel.accountTitle)
         case .sort:
-            filterCell.configure(title: "Сортировка", value: viewModel.sortOption.rawValue)
+            filterCell.configure(title: appString("Сортировка"), value: viewModel.sortOption.title)
         }
 
         return filterCell
@@ -563,7 +563,7 @@ extension AnalyticsViewController: UITableViewDataSource {
     private func emptyCell() -> UITableViewCell {
         let cell = UITableViewCell()
         var content = cell.defaultContentConfiguration()
-        content.text = "Нет операций за выбранный период"
+        content.text = appString("Нет операций за выбранный период")
         content.textProperties.color = .secondaryLabel
         content.textProperties.alignment = .center
         cell.contentConfiguration = content

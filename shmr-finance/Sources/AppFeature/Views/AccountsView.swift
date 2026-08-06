@@ -50,7 +50,7 @@ struct AccountsView: View {
                     await viewModel.load()
                 }
             }
-            .environment(\.locale, Locale(identifier: "ru_RU"))
+            .environment(\.locale, LocalizationSettings.shared.locale)
             .toolbar(.hidden, for: .navigationBar)
             .overlay {
                 if viewModel.isLoading {
@@ -64,8 +64,8 @@ struct AccountsView: View {
             // Вместе с кнопкой добавления — см. комментарий в списке операций.
             .readableWidth()
             .background(backgroundColor)
-            .alert("Ошибка", isPresented: $viewModel.showError) {
-                Button("Ок", role: .cancel) {}
+            .alert(appString("Ошибка"), isPresented: $viewModel.showError) {
+                Button(appString("Ок"), role: .cancel) {}
             } message: {
                 Text(viewModel.errorMessage)
             }
@@ -124,10 +124,10 @@ struct AccountsView: View {
             dateChip
             Spacer()
             HStack(spacing: 8) {
-                circleButton(systemName: "chart.pie", label: "Аналитика") {
+                circleButton(systemName: "chart.pie", label: appString("Аналитика")) {
                     showAnalytics = true
                 }
-                circleButton(systemName: "slider.horizontal.3", label: "Настройки") {
+                circleButton(systemName: "slider.horizontal.3", label: appString("Настройки")) {
                     showSettings = true
                 }
             }
@@ -154,7 +154,7 @@ struct AccountsView: View {
         }
         .buttonStyle(.plain)
         .glassCapsule()
-        .accessibilityLabel("Выбрать дату")
+        .accessibilityLabel(appString("Выбрать дату"))
     }
 
     private func circleButton(
@@ -178,7 +178,7 @@ struct AccountsView: View {
 
         return NavigationStack {
             DatePicker(
-                "Дата",
+                appString("Дата"),
                 selection: $viewModel.selectedDate,
                 // Операций из будущего не бывает — верхнюю границу закрываем.
                 in: ...Date(),
@@ -188,7 +188,7 @@ struct AccountsView: View {
             .padding()
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("Готово") {
+                    Button(appString("Готово")) {
                         showDatePicker = false
                     }
                 }
@@ -201,7 +201,7 @@ struct AccountsView: View {
     // Общий баланс (только отображение; корректируется каждый счёт по тапу на строку).
     private var balanceHeader: some View {
         VStack(alignment: .leading, spacing: 4) {
-            Text("баланс")
+            Text(appString("баланс"))
                 .scaledFont(size: 14, weight: .medium)
                 .foregroundStyle(.secondary)
             balanceValue
@@ -218,14 +218,14 @@ struct AccountsView: View {
 
     private var balanceAccessibilityLabel: String {
         guard isBalanceHidden == false else {
-            return "Баланс скрыт. Потрясите устройство, чтобы показать"
+            return appString("Баланс скрыт. Потрясите устройство, чтобы показать")
         }
         let amount = viewModel.totalBalance.formatted(
             .currency(code: viewModel.currencyCode)
                 .precision(.fractionLength(0...2))
-                .locale(Locale(identifier: "ru_RU"))
+                .locale(LocalizationSettings.shared.locale)
         )
-        return "Баланс \(amount)"
+        return String(format: appString("Баланс %@"), amount)
     }
 
     // Сумма или спойлер поверх неё, если баланс скрыт (по тряске).
@@ -233,7 +233,7 @@ struct AccountsView: View {
         let balanceString = viewModel.totalBalance.formatted(
             .currency(code: viewModel.currencyCode)
                 .precision(.fractionLength(0...2))
-                .locale(Locale(identifier: "ru_RU"))
+                .locale(LocalizationSettings.shared.locale)
         )
 
         return Text(balanceString)
@@ -274,7 +274,7 @@ struct AccountsView: View {
         .padding(.vertical, 3)
         // Без этого строка читается тремя отдельными остановками вместо одной фразы.
         .accessibilityElement(children: .combine)
-        .accessibilityHint("Дважды коснитесь, чтобы изменить баланс")
+        .accessibilityHint(appString("Дважды коснитесь, чтобы изменить баланс"))
     }
 
     // Отметка основного счёта. Отдельная кнопка, а не тап по строке:
@@ -292,7 +292,7 @@ struct AccountsView: View {
                 .foregroundStyle(isSelected ? Color.accentColor : Color(.tertiaryLabel))
         }
         .buttonStyle(.plain)
-        .accessibilityLabel(isSelected ? "Основной счёт" : "Сделать основным")
+        .accessibilityLabel(isSelected ? appString("Основной счёт") : appString("Сделать основным"))
     }
 
     private var addButton: some View {
@@ -306,7 +306,7 @@ struct AccountsView: View {
                 .background(Circle().fill(Color.accentColor))
         }
         .padding(16)
-        .accessibilityLabel("Добавить счёт")
+        .accessibilityLabel(appString("Добавить счёт"))
     }
 
     private func currencyFormat(for account: BankAccount) -> Decimal.FormatStyle.Currency {

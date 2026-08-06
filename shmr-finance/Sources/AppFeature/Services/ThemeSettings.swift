@@ -16,11 +16,11 @@ enum AppTheme: String, CaseIterable, Identifiable {
     var title: String {
         switch self {
         case .system:
-            return "Системная"
+            return appString("Системная")
         case .light:
-            return "Светлая"
+            return appString("Светлая")
         case .dark:
-            return "Тёмная"
+            return appString("Тёмная")
         }
     }
 

@@ -25,7 +25,7 @@ final class AnalyticsTransactionCell: UITableViewCell {
         emojiLabel.text = category.map { category in
             String(category.emoji)
         }
-        nameLabel.text = category?.name ?? "Без статьи"
+        nameLabel.text = category?.name ?? appString("Без статьи")
 
         let comment = transaction.comment?.trimmingCharacters(in: .whitespacesAndNewlines)
         commentLabel.text = comment
@@ -34,7 +34,7 @@ final class AnalyticsTransactionCell: UITableViewCell {
         amountLabel.text = transaction.amount.formatted(
             .currency(code: "RUB")
                 .precision(.fractionLength(0...2))
-                .locale(Locale(identifier: "ru_RU"))
+                .locale(LocalizationSettings.shared.locale)
         )
 
         // Строка читается одной фразой, а не тремя остановками подряд.

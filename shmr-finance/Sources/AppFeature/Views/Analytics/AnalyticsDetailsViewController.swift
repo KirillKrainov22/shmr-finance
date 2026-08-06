@@ -14,7 +14,7 @@ final class AnalyticsDetailsViewController: UIViewController {
         // должно быть одно и то же у кольца и у списка.
         segments = PieChartView.segments(for: entities)
         super.init(nibName: nil, bundle: nil)
-        title = "Детализация"
+        title = appString("Детализация")
         chartView.entities = entities
         // Легенда не нужна: список ниже подробнее и с теми же цветами.
         chartView.showsLegend = false
@@ -35,7 +35,7 @@ final class AnalyticsDetailsViewController: UIViewController {
                 self?.dismiss(animated: true)
             }
         )
-        close.accessibilityLabel = "Закрыть"
+        close.accessibilityLabel = appString("Закрыть")
         navigationItem.rightBarButtonItem = close
 
         tableView.dataSource = self

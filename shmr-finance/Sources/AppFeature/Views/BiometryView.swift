@@ -24,7 +24,7 @@ struct BiometryView: View {
             }
             .listStyle(.plain)
             .background(Color(.systemBackground))
-            .navigationTitle("Биометрия")
+            .navigationTitle(appString("Биометрия"))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
@@ -42,12 +42,12 @@ struct BiometryView: View {
     // Пока включить нельзя — объясняем почему, а не оставляем серую строку молча.
     private var subtitle: String {
         if biometry.isAvailable == false {
-            return "Недоступна на этом устройстве"
+            return appString("Недоступна на этом устройстве")
         }
         if PasscodeStore.isSet == false {
-            return "Сначала установите ПИН-код"
+            return appString("Сначала установите ПИН-код")
         }
-        return "Хранятся только на вашем устройстве"
+        return appString("Хранятся только на вашем устройстве")
     }
 }
 

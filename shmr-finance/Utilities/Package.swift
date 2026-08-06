@@ -3,6 +3,7 @@ import PackageDescription
 
 let package = Package(
     name: "Utilities",
+    defaultLocalization: "ru",
     platforms: [
         .iOS(.v18)
     ],
@@ -17,6 +18,9 @@ let package = Package(
     targets: [
         .target(
             name: "PieChart",
+            resources: [
+                .process("Resources")
+            ],
             // Тот же режим языка, что и у приложения, иначе строгая проверка
             // изоляции из Swift 6 разошлась бы с остальным кодом.
             swiftSettings: [

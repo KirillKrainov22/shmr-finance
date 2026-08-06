@@ -26,12 +26,12 @@ struct AccountPickerView: View {
                     dismiss()
                 }
                 .accessibilityElement(children: .combine)
-                .accessibilityHint("Дважды коснитесь, чтобы выбрать")
+                .accessibilityHint(appString("Дважды коснитесь, чтобы выбрать"))
             }
             .listStyle(.plain)
-            .navigationTitle("Счёт")
+            .navigationTitle(appString("Счёт"))
             .navigationBarTitleDisplayMode(.inline)
-            .environment(\.locale, Locale(identifier: "ru_RU"))
+            .environment(\.locale, LocalizationSettings.shared.locale)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     ToolbarCloseButton {

@@ -29,9 +29,9 @@ struct BalanceCorrectionView: View {
             VStack(spacing: 0) {
                 amountField
 
-                infoRow(title: "Дата и время", value: dateText)
+                infoRow(title: appString("Дата и время"), value: dateText)
                 Divider()
-                infoRow(title: "Валюта", value: currencyName)
+                infoRow(title: appString("Валюта"), value: currencyName)
 
                 Divider()
                 Button(role: .destructive) {
@@ -44,7 +44,7 @@ struct BalanceCorrectionView: View {
                         }
                     }
                 } label: {
-                    Text("Удалить счёт")
+                    Text(appString("Удалить счёт"))
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .padding(.horizontal, 16)
                         .padding(.vertical, 14)
@@ -52,9 +52,9 @@ struct BalanceCorrectionView: View {
 
                 Spacer()
             }
-            .environment(\.locale, Locale(identifier: "ru_RU"))
+            .environment(\.locale, LocalizationSettings.shared.locale)
             .scrollDismissesKeyboard(.interactively) // клавиатура прячется при свайпе
-            .navigationTitle("Корректировка баланса")
+            .navigationTitle(appString("Корректировка баланса"))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
@@ -63,7 +63,7 @@ struct BalanceCorrectionView: View {
                     }
                 }
                 ToolbarItem(placement: .confirmationAction) {
-                    ToolbarConfirmButton(label: "Сохранить") {
+                    ToolbarConfirmButton(label: appString("Сохранить")) {
                         confirm()
                     }
                 }
@@ -152,7 +152,7 @@ struct BalanceCorrectionView: View {
 
     private var dateText: String {
         // «20 февраля, 23:42» — дата и время через запятую (системный формат вставляет «в»).
-        let locale = Locale(identifier: "ru_RU")
+        let locale = LocalizationSettings.shared.locale
         let day = date.formatted(
             .dateTime.day().month(.wide).locale(locale)
         )
@@ -178,7 +178,7 @@ struct BalanceCorrectionView: View {
     private var currencyName: String {
         switch account.currency {
         case "RUB":
-            return "Руб."
+            return appString("Руб.")
         default:
             return account.currency
         }

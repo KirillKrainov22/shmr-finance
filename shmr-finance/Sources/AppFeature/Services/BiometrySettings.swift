@@ -50,7 +50,7 @@ final class BiometrySettings {
         do {
             return try await context.evaluatePolicy(
                 .deviceOwnerAuthenticationWithBiometrics,
-                localizedReason: "Вход в приложение"
+                localizedReason: appString("Вход в приложение")
             )
         } catch {
             // Отказ, отмена или неудачное распознавание — не ошибка:

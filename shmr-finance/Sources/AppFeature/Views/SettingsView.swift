@@ -1,6 +1,6 @@
 import SwiftUI
 
-// Экран настроек (модалка). Все пункты — заглушки, кроме «Статьи».
+// Экран настроек (модалка).
 struct SettingsView: View {
 
     let direction: Direction?
@@ -11,6 +11,8 @@ struct SettingsView: View {
     @State private var passcodeMode: PasscodeView.Mode?
     @State private var showBiometry = false
     @State private var showTheme = false
+    @State private var showLanguage = false
+    @State private var showCurrency = false
     // Перечитываем после закрытия экрана: подпись строки зависит от того,
     // установлен код или нет.
     @State private var isPasscodeSet = PasscodeStore.isSet
@@ -21,16 +23,22 @@ struct SettingsView: View {
         NavigationStack {
             List {
                 Section {
-                    stubRow("Валюта")
+                    Button {
+                        showCurrency = true
+                    } label: {
+                        settingRow(appString("Валюта"))
+                            .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
                     Button {
                         showCategories = true
                     } label: {
-                        settingRow("Статьи")
+                        settingRow(appString("Статьи"))
                             .contentShape(Rectangle()) // тапабельна вся строка, а не только текст
                     }
                     .buttonStyle(.plain)
                 } header: {
-                    Text("Биометрия").textCase(nil)
+                    Text(appString("Биометрия")).textCase(nil)
                 }
 
                 Section {
@@ -38,7 +46,7 @@ struct SettingsView: View {
                         showTheme = true
                     } label: {
                         HStack {
-                            Text("Тема оформления")
+                            Text(appString("Тема оформления"))
                             Spacer()
                             Text(ThemeSettings.shared.theme.title)
                                 .foregroundStyle(.secondary)
@@ -50,10 +58,25 @@ struct SettingsView: View {
                         .contentShape(Rectangle())
                     }
                     .buttonStyle(.plain)
-                    stubRow("Язык")
-                    Toggle("Тактильная отдача", isOn: $haptics.isEnabled)
+                    Button {
+                        showLanguage = true
+                    } label: {
+                        HStack {
+                            Text(appString("Язык"))
+                            Spacer()
+                            Text(LocalizationSettings.shared.language.title)
+                                .foregroundStyle(.secondary)
+                            Image(systemName: "chevron.right")
+                                .font(.footnote.weight(.semibold))
+                                .foregroundStyle(.tertiary)
+                                .accessibilityHidden(true)
+                        }
+                        .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
+                    Toggle(appString("Тактильная отдача"), isOn: $haptics.isEnabled)
                 } header: {
-                    Text("Интерфейс").textCase(nil)
+                    Text(appString("Интерфейс")).textCase(nil)
                 }
 
                 Section {
@@ -61,9 +84,9 @@ struct SettingsView: View {
                         passcodeMode = isPasscodeSet ? .change : .set
                     } label: {
                         HStack {
-                            Text("ПИН-код")
+                            Text(appString("ПИН-код"))
                             Spacer()
-                            Text(isPasscodeSet ? "Изменить" : "Установить")
+                            Text(isPasscodeSet ? appString("Изменить") : appString("Установить"))
                                 .foregroundStyle(.secondary)
                             Image(systemName: "chevron.right")
                                 .font(.footnote.weight(.semibold))
@@ -76,16 +99,16 @@ struct SettingsView: View {
                     Button {
                         showBiometry = true
                     } label: {
-                        settingRow("Биометрия")
+                        settingRow(appString("Биометрия"))
                             .contentShape(Rectangle())
                     }
                     .buttonStyle(.plain)
                 } header: {
-                    Text("Безопасность").textCase(nil)
+                    Text(appString("Безопасность")).textCase(nil)
                 }
             }
             .listStyle(.plain)
-            .navigationTitle("Настройки")
+            .navigationTitle(appString("Настройки"))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
@@ -99,6 +122,16 @@ struct SettingsView: View {
             }
             .sheet(isPresented: $showTheme) {
                 ThemeView()
+                    .presentationDetents([.fraction(0.4)])
+                    .presentationDragIndicator(.visible)
+            }
+            .sheet(isPresented: $showCurrency) {
+                CurrencyView()
+                    .presentationDetents([.fraction(0.4)])
+                    .presentationDragIndicator(.visible)
+            }
+            .sheet(isPresented: $showLanguage) {
+                LanguageView()
                     .presentationDetents([.fraction(0.4)])
                     .presentationDragIndicator(.visible)
             }
@@ -124,10 +157,6 @@ struct SettingsView: View {
         }
         .presentationDetents([.medium, .large])
         .presentationBackground(Color(.systemBackground))
-    }
-
-    private func stubRow(_ title: String) -> some View {
-        settingRow(title)
     }
 
     private func settingRow(_ title: String) -> some View {

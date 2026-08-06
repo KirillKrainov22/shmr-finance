@@ -104,7 +104,7 @@ final class AnalyticsDetailCell: UITableViewCell {
     private static let currencyFormatter: NumberFormatter = {
         let formatter = NumberFormatter()
         formatter.numberStyle = .currency
-        formatter.locale = Locale(identifier: "ru_RU")
+        formatter.locale = LocalizationSettings.shared.locale
         formatter.currencyCode = "RUB"
         formatter.minimumFractionDigits = 0
         formatter.maximumFractionDigits = 2

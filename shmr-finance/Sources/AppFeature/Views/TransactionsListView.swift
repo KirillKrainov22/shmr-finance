@@ -49,7 +49,7 @@ struct TransactionsListView: View {
                     }
                 }
             }
-            .environment(\.locale, Locale(identifier: "ru_RU")) // ₽ и русские даты на всём экране
+            .environment(\.locale, LocalizationSettings.shared.locale) // ₽ и русские даты на всём экране
             .toolbar(.hidden, for: .navigationBar)
             .overlay {
                 if viewModel.isLoading {
@@ -65,8 +65,8 @@ struct TransactionsListView: View {
             // далеко от списка. Фон при этом остаётся во всю ширину.
             .readableWidth()
             .background(backgroundColor)
-            .alert("Ошибка", isPresented: $viewModel.showError) {
-                Button("Ок", role: .cancel) {}
+            .alert(appString("Ошибка"), isPresented: $viewModel.showError) {
+                Button(appString("Ок"), role: .cancel) {}
             } message: {
                 Text(viewModel.errorMessage)
             }
@@ -111,10 +111,10 @@ struct TransactionsListView: View {
             Spacer()
             HStack(spacing: 8) {
                 sortMenu
-                circleButton(systemName: "chart.pie", label: "Аналитика") {
+                circleButton(systemName: "chart.pie", label: appString("Аналитика")) {
                     showAnalytics = true
                 }
-                circleButton(systemName: "slider.horizontal.3", label: "Настройки") {
+                circleButton(systemName: "slider.horizontal.3", label: appString("Настройки")) {
                     showSettings = true
                 }
             }
@@ -127,9 +127,9 @@ struct TransactionsListView: View {
         @Bindable var viewModel = viewModel
 
         return Menu {
-            Picker("Сортировка", selection: $viewModel.sortOption) {
+            Picker(appString("Сортировка"), selection: $viewModel.sortOption) {
                 ForEach(TransactionSort.allCases) { option in
-                    Text(option.rawValue).tag(option)
+                    Text(option.title).tag(option)
                 }
             }
         } label: {
@@ -141,8 +141,8 @@ struct TransactionsListView: View {
         }
         .tint(.primary) // Menu красит значок акцентным — форсируем чёрный
         .glassCapsule()
-        .accessibilityLabel("Сортировка")
-        .accessibilityValue(viewModel.sortOption.rawValue)
+        .accessibilityLabel(appString("Сортировка"))
+        .accessibilityValue(viewModel.sortOption.title)
     }
 
     private var dateChip: some View {
@@ -163,7 +163,7 @@ struct TransactionsListView: View {
         }
         .buttonStyle(.plain) // без .plain кнопка красит содержимое акцентным цветом
         .glassCapsule()
-        .accessibilityLabel("Выбрать дату")
+        .accessibilityLabel(appString("Выбрать дату"))
     }
 
     private func circleButton(
@@ -187,7 +187,7 @@ struct TransactionsListView: View {
 
         return NavigationStack {
             DatePicker(
-                "Дата",
+                appString("Дата"),
                 selection: $viewModel.selectedDate,
                 // Операций из будущего не бывает — верхнюю границу закрываем.
                 in: ...Date(),
@@ -197,7 +197,7 @@ struct TransactionsListView: View {
             .padding()
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("Готово") {
+                    Button(appString("Готово")) {
                         showDatePicker = false
                     }
                 }
@@ -249,7 +249,7 @@ struct TransactionsListView: View {
         .padding(.vertical, 3)
         // Без этого строка читается тремя отдельными остановками вместо одной фразы.
         .accessibilityElement(children: .combine)
-        .accessibilityHint("Дважды коснитесь, чтобы изменить")
+        .accessibilityHint(appString("Дважды коснитесь, чтобы изменить"))
     }
 
     private var addButton: some View {
@@ -263,24 +263,24 @@ struct TransactionsListView: View {
                 .background(Circle().fill(Color.accentColor))
         }
         .padding(16)
-        .accessibilityLabel("Добавить операцию")
+        .accessibilityLabel(appString("Добавить операцию"))
     }
 
     private var emptyText: String {
         switch viewModel.direction {
         case .income:
-            return "Нет доходов за выбранный день"
+            return appString("Нет доходов за выбранный день")
         case .outcome:
-            return "Нет расходов за выбранный день"
+            return appString("Нет расходов за выбранный день")
         }
     }
 
     private var totalLabel: String {
         switch viewModel.direction {
         case .income:
-            return "доходы, всего"
+            return appString("доходы, всего")
         case .outcome:
-            return "расходы, всего"
+            return appString("расходы, всего")
         }
     }
 

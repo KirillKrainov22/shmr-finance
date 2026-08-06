@@ -67,7 +67,7 @@ final class OptionPickerViewController: UITableViewController {
                 self?.dismiss(animated: true)
             }
         )
-        close.accessibilityLabel = "Закрыть"
+        close.accessibilityLabel = appString("Закрыть")
 
         // У одиночного выбора применять нечего — тап и есть выбор,
         // поэтому крестик занимает правый край, как в макете.
@@ -87,7 +87,7 @@ final class OptionPickerViewController: UITableViewController {
                 self?.applyAndDismiss()
             }
         )
-        apply.accessibilityLabel = "Готово"
+        apply.accessibilityLabel = appString("Готово")
         // Штатный стиль iOS 26 для кнопки, завершающей задачу: заливает
         // подложку целиком и сам делает значок контрастным — белым.
         // Свой кружок тут не нужен, подложку система рисует сама.

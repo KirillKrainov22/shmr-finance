@@ -23,7 +23,7 @@ struct AccountEditView: View {
             VStack(spacing: 0) {
                 balanceField
 
-                TextField("Название", text: $viewModel.name)
+                TextField(appString("Название"), text: $viewModel.name)
                     .padding(.horizontal, 16)
                     .padding(.vertical, 14)
 
@@ -32,7 +32,7 @@ struct AccountEditView: View {
                 // Эмодзи вводится с системной клавиатуры. Ограничение по длине
                 // держим сами: бэкенд принимает не больше 10 символов.
                 HStack {
-                    Text("Эмодзи")
+                    Text(appString("Эмодзи"))
                     Spacer()
                     TextField(AccountFormViewModel.defaultEmoji, text: $viewModel.emoji)
                         .multilineTextAlignment(.trailing)
@@ -50,9 +50,9 @@ struct AccountEditView: View {
 
                 // Валюта только рублёвая, поэтому строка справочная, без выбора.
                 HStack {
-                    Text("Валюта")
+                    Text(appString("Валюта"))
                     Spacer()
-                    Text("Руб.")
+                    Text(appString("Руб."))
                         .foregroundStyle(.secondary)
                 }
                 .padding(.horizontal, 16)
@@ -60,9 +60,9 @@ struct AccountEditView: View {
 
                 Spacer()
             }
-            .environment(\.locale, Locale(identifier: "ru_RU"))
+            .environment(\.locale, LocalizationSettings.shared.locale)
             .scrollDismissesKeyboard(.interactively)
-            .navigationTitle("Новый счёт")
+            .navigationTitle(appString("Новый счёт"))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
@@ -71,18 +71,18 @@ struct AccountEditView: View {
                     }
                 }
                 ToolbarItem(placement: .confirmationAction) {
-                    ToolbarConfirmButton(label: "Создать") {
+                    ToolbarConfirmButton(label: appString("Создать")) {
                         confirm()
                     }
                 }
             }
-            .alert("Заполните все поля", isPresented: $showValidationAlert) {
-                Button("Ок", role: .cancel) {}
+            .alert(appString("Заполните все поля"), isPresented: $showValidationAlert) {
+                Button(appString("Ок"), role: .cancel) {}
             } message: {
                 Text(validationMessage)
             }
-            .alert("Ошибка", isPresented: $viewModel.showError) {
-                Button("Ок", role: .cancel) {}
+            .alert(appString("Ошибка"), isPresented: $viewModel.showError) {
+                Button(appString("Ок"), role: .cancel) {}
             } message: {
                 Text(viewModel.errorMessage)
             }
@@ -141,12 +141,12 @@ struct AccountEditView: View {
     private var validationMessage: String {
         var missing: [String] = []
         if viewModel.trimmedName.isEmpty {
-            missing.append("название")
+            missing.append(appString("название"))
         }
         if viewModel.parsedBalance == nil {
-            missing.append("баланс")
+            missing.append(appString("баланс"))
         }
-        return "Нужно указать: " + missing.joined(separator: ", ") + "."
+        return appString("Нужно указать: ") + missing.joined(separator: ", ") + "."
     }
 
     private func confirm() {

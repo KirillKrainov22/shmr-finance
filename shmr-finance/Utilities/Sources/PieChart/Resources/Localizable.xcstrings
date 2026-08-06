@@ -1,0 +1,46 @@
+{
+  "sourceLanguage": "ru",
+  "strings": {
+    "Всего за период": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Total for the period"
+          }
+        }
+      }
+    },
+    "Диаграмма по статьям. Нет данных за период.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chart by category. No data for the period."
+          }
+        }
+      }
+    },
+    "Другое": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Other"
+          }
+        }
+      }
+    },
+    "Диаграмма по статьям. Всего за период": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chart by category. Total for the period"
+          }
+        }
+      }
+    }
+  },
+  "version": "1.0"
+}

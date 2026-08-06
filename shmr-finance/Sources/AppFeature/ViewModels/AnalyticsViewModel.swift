@@ -14,11 +14,11 @@ final class AnalyticsViewModel {
         var title: String {
             switch self {
             case .outcome:
-                return "Расходы"
+                return appString("Расходы")
             case .income:
-                return "Доходы"
+                return appString("Доходы")
             case .all:
-                return "Всё"
+                return appString("Всё")
             }
         }
 
@@ -46,15 +46,15 @@ final class AnalyticsViewModel {
         var title: String {
             switch self {
             case .custom:
-                return "Произвольный"
+                return appString("Произвольный")
             case .week:
-                return "За неделю"
+                return appString("За неделю")
             case .month:
-                return "За месяц"
+                return appString("За месяц")
             case .quarter:
-                return "За квартал"
+                return appString("За квартал")
             case .year:
-                return "За год"
+                return appString("За год")
             }
         }
 
@@ -124,14 +124,14 @@ final class AnalyticsViewModel {
 
     var periodTitle: String {
         let formatter = DateFormatter()
-        formatter.locale = Locale(identifier: "ru_RU")
+        formatter.locale = LocalizationSettings.shared.locale
         formatter.dateFormat = "dd.MM.yyyy"
         return "\(formatter.string(from: startDate)) – \(formatter.string(from: endDate))"
     }
 
     var categoriesTitle: String {
         guard selectedCategoryIDs.isEmpty == false else {
-            return "Все статьи"
+            return appString("Все статьи")
         }
 
         let names = availableCategories
@@ -146,13 +146,13 @@ final class AnalyticsViewModel {
 
     var accountTitle: String {
         guard selectedAccountID != Self.allAccountsID else {
-            return "Все счета"
+            return appString("Все счета")
         }
 
         let account = accounts.first { account in
             account.id == selectedAccountID
         }
-        return account?.name ?? "Все счета"
+        return account?.name ?? appString("Все счета")
     }
 
     // Суммы по статьям, от крупных к мелким. Порядок важен: собственные

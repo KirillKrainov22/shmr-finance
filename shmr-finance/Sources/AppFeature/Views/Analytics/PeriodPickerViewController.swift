@@ -10,7 +10,7 @@ final class PeriodPickerViewController: UIViewController {
         case end
     }
 
-    private let boundControl = UISegmentedControl(items: ["Начало", "Конец"])
+    private let boundControl = UISegmentedControl(items: [appString("Начало"), appString("Конец")])
     private let rangeLabel = UILabel()
     private let calendar = UIDatePicker()
 
@@ -31,7 +31,7 @@ final class PeriodPickerViewController: UIViewController {
         self.onStartChange = onStartChange
         self.onEndChange = onEndChange
         super.init(nibName: nil, bundle: nil)
-        title = "Период"
+        title = appString("Период")
     }
 
     required init?(coder: NSCoder) {
@@ -57,7 +57,7 @@ final class PeriodPickerViewController: UIViewController {
                 self?.dismiss(animated: true)
             }
         )
-        close.accessibilityLabel = "Закрыть"
+        close.accessibilityLabel = appString("Закрыть")
         navigationItem.rightBarButtonItem = close
 
         setUpControls()
@@ -80,7 +80,7 @@ final class PeriodPickerViewController: UIViewController {
 
         calendar.datePickerMode = .date
         calendar.preferredDatePickerStyle = .inline
-        calendar.locale = Locale(identifier: "ru_RU")
+        calendar.locale = LocalizationSettings.shared.locale
         // Аналитика за будущее лишена смысла: операций там нет и быть не может.
         calendar.maximumDate = Date()
         calendar.addAction(
@@ -136,7 +136,7 @@ final class PeriodPickerViewController: UIViewController {
 
     private static let dayFormatter: DateFormatter = {
         let formatter = DateFormatter()
-        formatter.locale = Locale(identifier: "ru_RU")
+        formatter.locale = LocalizationSettings.shared.locale
         formatter.dateFormat = "dd.MM.yyyy"
         return formatter
     }()

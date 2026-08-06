@@ -135,7 +135,7 @@ final class BankAccountsViewModel {
             // Бэкенд не даёт удалить счёт с операциями. Общий текст про отказ
             // сервера тут ничего не объясняет, поэтому разбираем этот случай.
             if isConflictError(error) {
-                errorMessage = "Сначала удалите операции по этому счёту."
+                errorMessage = appString("Сначала удалите операции по этому счёту.")
             } else {
                 errorMessage = userErrorMessage(from: error)
             }

@@ -22,7 +22,7 @@ struct ToolbarCloseButton: View {
     var body: some View {
         if #available(iOS 26, *) {
             Button(role: .close, action: action)
-                .accessibilityLabel("Закрыть")
+                .accessibilityLabel(appString("Закрыть"))
         } else {
             Button(action: action) {
                 Image(systemName: "xmark")
@@ -32,7 +32,7 @@ struct ToolbarCloseButton: View {
                     .background(Circle().fill(Color(.systemGray5)))
             }
             .buttonStyle(.plain)
-            .accessibilityLabel("Закрыть")
+            .accessibilityLabel(appString("Закрыть"))
         }
     }
 }

@@ -11,6 +11,11 @@ enum TransactionSort: String, CaseIterable, Identifiable {
     var id: String {
         rawValue
     }
+
+    // rawValue — ключ перевода и одновременно русский вариант надписи.
+    var title: String {
+        appString(rawValue)
+    }
 }
 
 // Мозг экрана списка операций: грузит данные, фильтрует по направлению, считает сумму.

@@ -27,7 +27,7 @@ struct ThemeView: View {
             }
             .listStyle(.plain)
             .background(Color(.systemBackground))
-            .navigationTitle("Тема оформления")
+            .navigationTitle(appString("Тема оформления"))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {

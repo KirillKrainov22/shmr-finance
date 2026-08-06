@@ -118,7 +118,7 @@ public final class PieChartView: UIView {
         let totalText = formatter.string(from: total as NSDecimalNumber) ?? ""
 
         guard segments.isEmpty == false else {
-            return "Диаграмма по статьям. Нет данных за период."
+            return PieChartLocalization.string("Диаграмма по статьям. Нет данных за период.")
         }
 
         let parts = segments.map { segment in
@@ -126,7 +126,7 @@ public final class PieChartView: UIView {
             let percent = Int((segment.fraction * 100).rounded())
             return "\(segment.label): \(amount), \(percent)%"
         }
-        return "Диаграмма по статьям. Всего за период \(totalText). "
+        return PieChartLocalization.string("Диаграмма по статьям. Всего за период") + " \(totalText). "
             + parts.joined(separator: ". ")
     }
 
@@ -258,7 +258,7 @@ public final class PieChartView: UIView {
             let restValue = rest.reduce(Decimal(0)) { partialSum, entity in
                 partialSum + entity.value
             }
-            values.append((label: "Другое", value: restValue))
+            values.append((label: PieChartLocalization.string("Другое"), value: restValue))
         }
 
         let total = values.reduce(Decimal(0)) { partialSum, item in
@@ -398,7 +398,7 @@ private final class CenterTextView: UIView {
 
     override func draw(_ rect: CGRect) {
         let title = NSAttributedString(
-            string: "Всего за период",
+            string: PieChartLocalization.string("Всего за период"),
             attributes: [
                 .font: PieChartColors.centerTitleFont,
                 .foregroundColor: PieChartColors.secondaryText

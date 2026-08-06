@@ -208,11 +208,12 @@
 				};
 			};
 			buildConfigurationList = 86830DC23007BA9600A0C704 /* Build configuration list for PBXProject "shmr-finance" */;
-			developmentRegion = en;
+			developmentRegion = ru;
 			hasScannedForEncodings = 0;
 			knownRegions = (
 				en,
 				Base,
+				ru,
 			);
 			mainGroup = 86830DBE3007BA9600A0C704;
 			minimizedProjectReferenceProxies = 1;

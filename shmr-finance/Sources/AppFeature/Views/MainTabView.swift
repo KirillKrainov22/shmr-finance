@@ -52,6 +52,7 @@ public struct MainTabView: View {
             // Слушать уход в фон начинаем сразу: приложение можно свернуть
             // и на заставке.
             AppSwitcherBlur.shared.start()
+            LocalizationSettings.shared.start()
             // Окно к этому моменту уже существует — можно красить.
             ThemeSettings.shared.apply()
             await LocalStorages.migrateIfNeeded()
@@ -76,20 +77,20 @@ public struct MainTabView: View {
             TransactionsListView(direction: .outcome)
                 .tag(Tab.expenses)
                 .tabItem {
-                    Label("Расходы", systemImage: "arrow.down.circle").environment(\.symbolVariants, .none)
+                    Label(appString("Расходы"), systemImage: "arrow.down.circle").environment(\.symbolVariants, .none)
                 }
 
             TransactionsListView(direction: .income)
                 .tag(Tab.income)
                 .tabItem {
-                    Label("Доходы", systemImage: "arrow.up.circle").environment(\.symbolVariants, .none)
+                    Label(appString("Доходы"), systemImage: "arrow.up.circle").environment(\.symbolVariants, .none)
                 }
             // Экрану счетов нужно знать, открыт ли он: тряска ловится глобально,
             // и без этого баланс скрывался бы с любой вкладки.
             AccountsView(isVisible: selectedTab == .accounts)
                 .tag(Tab.accounts)
                 .tabItem {
-                    Label("Счета", systemImage: "wallet.bifold").environment(\.symbolVariants, .none)
+                    Label(appString("Счета"), systemImage: "wallet.bifold").environment(\.symbolVariants, .none)
                 }
         }
         // Переключение вкладок — движение по ряду дискретных значений,
@@ -121,7 +122,7 @@ public struct MainTabView: View {
         .padding(.bottom, 55) // над таб-баром
         .transition(.move(edge: .bottom).combined(with: .opacity))
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel("Офлайн-режим. Показаны сохранённые данные")
+        .accessibilityLabel(appString("Офлайн-режим. Показаны сохранённые данные"))
     }
 }
 
