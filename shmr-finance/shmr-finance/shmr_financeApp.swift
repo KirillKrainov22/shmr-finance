@@ -6,6 +6,8 @@
 //
 
 import SwiftUI
+// Весь код приложения живёт в модуле AppFeature, здесь только запуск.
+import AppFeature
 
 @main
 struct shmr_financeApp: App {
