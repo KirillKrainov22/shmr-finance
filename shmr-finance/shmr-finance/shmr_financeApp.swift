@@ -13,7 +13,7 @@ import AppFeature
 struct shmr_financeApp: App {
     var body: some Scene {
         WindowGroup {
-            MainTabView()
+            MainTabContainer()
         }
     }
 }
